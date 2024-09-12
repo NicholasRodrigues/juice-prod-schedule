@@ -1,6 +1,38 @@
 #include "algorithm.h"
 #include <algorithm>
 #include <vector>
+#include <iostream>
+
+// Function to calculate total cost (penalties + setup times) and total penalty cost
+double calculateTotalCost(const std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double& totalPenaltyCost) {
+    double totalCost = 0.0;
+    totalPenaltyCost = 0.0;
+    int currentTime = 0;
+    int currentTask = -1;
+
+    for (int i = 0; i < schedule.size(); ++i) {
+        int taskId = schedule[i];
+        const Order& order = orders[taskId];
+
+        if (currentTask >= 0) {
+            totalCost += setupTimes[currentTask][taskId];
+            currentTime += setupTimes[currentTask][taskId];
+        }
+
+        currentTime += order.processingTime;
+
+        if (currentTime > order.dueTime) {
+            double penalty = order.penaltyRate * (currentTime - order.dueTime);
+            totalPenaltyCost += penalty;
+            totalCost += penalty;
+        }
+
+        currentTask = taskId;
+    }
+
+    return totalCost;
+}
+
 
 // Calculates initial setup time weight based on averages
 double calculateInitialWeight(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes) {
@@ -47,12 +79,17 @@ double calculatePriority(const Order& order, int currentTime, int currentTask, c
 }
 
 // Advanced Greedy Algorithm using averages for initial weight and dynamic adjustment
-std::vector<int> advancedGreedyAlgorithmWithDynamicWeight(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double finalSetupTimeWeight) {
+// It calculates total cost (penalty + setup time) as it builds the schedule
+std::vector<int> advancedGreedyAlgorithmWithDynamicWeight(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double finalSetupTimeWeight, double& totalPenaltyCost, double& totalCost) {
     std::vector<int> schedule;
     std::vector<Order> remainingOrders = orders;
     int currentTime = 0; // Start time of the schedule
     int currentTask = -1; // No task initially
     int totalTasks = orders.size();
+
+    // Initialize cost variables
+    totalPenaltyCost = 0.0;
+    totalCost = 0.0;
 
     // Step 1: Calculate the initial setup time weight based on averages
     double initialSetupTimeWeight = calculateInitialWeight(orders, setupTimes);
@@ -77,14 +114,27 @@ std::vector<int> advancedGreedyAlgorithmWithDynamicWeight(const std::vector<Orde
         Order chosenOrder = *bestOrder;
         schedule.push_back(chosenOrder.id);
 
-        // Update the current time (including processing time and setup time)
+        // Update the current time and calculate setup time cost
         if (currentTask >= 0) {
-            currentTime += setupTimes[currentTask][chosenOrder.id];
+            double setupTime = setupTimes[currentTask][chosenOrder.id];
+            totalCost += setupTime;
+            currentTime += setupTime;
         }
+
+        // Add processing time
         currentTime += chosenOrder.processingTime;
 
+        // Calculate penalty cost if the task is completed after due time
+        if (currentTime > chosenOrder.dueTime) {
+            double penalty = chosenOrder.penaltyRate * (currentTime - chosenOrder.dueTime);
+            totalPenaltyCost += penalty;
+            totalCost += penalty;  // Add penalty to total cost
+        }
+
+        // Remove the chosen order from the remaining orders
         remainingOrders.erase(bestOrder);
 
+        // Update the current task
         currentTask = chosenOrder.id;
     }
 

@@ -20,13 +20,19 @@ int main() {
 
         parseInputFile(filename, orders, setupTimes);
 
-        std::vector<int> schedule = advancedGreedyAlgorithmWithDynamicWeight(orders, setupTimes, finalSetupTimeWeight);
+        double totalPenaltyCost = 0.0;
+        double totalCost = 0.0;
+
+        std::vector<int> schedule = advancedGreedyAlgorithmWithDynamicWeight(orders, setupTimes, finalSetupTimeWeight, totalPenaltyCost, totalCost);
 
         std::cout << "Dynamic advanced greedy schedule for " << filename << ": ";
         for (int i : schedule) {
             std::cout << i << " ";
         }
         std::cout << std::endl;
+
+        std::cout << "Total penalty cost for " << filename << ": " << totalPenaltyCost << std::endl;
+        std::cout << "Total cost for " << filename << ": " << totalCost << std::endl;
     }
 
     return 0;

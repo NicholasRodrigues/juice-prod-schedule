@@ -12,6 +12,8 @@ struct Order {
 
 double calculateInitialWeight(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes);
 
-std::vector<int> advancedGreedyAlgorithmWithDynamicWeight(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double finalSetupTimeWeight);
+double calculateTotalCost(const std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double& totalPenaltyCost);
+
+std::vector<int> advancedGreedyAlgorithmWithDynamicWeight(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double finalSetupTimeWeight, double& totalPenaltyCost, double& totalCost);
 
 #endif
