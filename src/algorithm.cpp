@@ -1,7 +1,9 @@
 #include "algorithm.h"
+#include "neighborhoods.h"
 #include <algorithm>
 #include <vector>
 #include <iostream>
+#include <random>
 
 // Function to calculate total cost (penalties + setup times) and total penalty cost
 double calculateTotalCost(const std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double& totalPenaltyCost) {
@@ -136,6 +138,40 @@ std::vector<int> advancedGreedyAlgorithmWithDynamicWeight(const std::vector<Orde
 
         // Update the current task
         currentTask = chosenOrder.id;
+    }
+
+    return schedule;
+}
+
+
+// Function to shuffle neighborhoods
+void shuffleNeighborhoods(std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&, const std::vector<std::vector<int>>&, double&)>>& neighborhoods) {
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(neighborhoods.begin(), neighborhoods.end(), g);
+}
+
+// RVND Algorithm with Debugging
+std::vector<int> RVND(std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double& totalCost) {
+    std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&, const std::vector<std::vector<int>>&, double&)>> neighborhoods = {
+            swapNeighborhood,
+            twoOptNeighborhood,
+            reinsertionNeighborhood
+    };
+
+    bool improvement = true;
+
+    while (improvement) {
+        shuffleNeighborhoods(neighborhoods);
+        improvement = false;
+
+        for (size_t i = 0; i < neighborhoods.size(); ++i) {
+            bool neighborhoodImprovement = neighborhoods[i](schedule, orders, setupTimes, totalCost);
+            if (neighborhoodImprovement) {
+                improvement = true;
+                break;
+            }
+        }
     }
 
     return schedule;
