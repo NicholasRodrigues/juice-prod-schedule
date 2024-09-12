@@ -7,6 +7,9 @@ I named it "Advanced Greedy Algorithm" because it is a greedy algorithm that tri
 Kinda bad name, but it was because I think im trying to be too smart, but I'm not, so I will leave it like that.
 Its like killing a fly with a bazooka, but it works.
 
+![Gold Gradient Approved By Business Label Circle Sticker (2)](https://github.com/user-attachments/assets/b7414c09-cdca-4e10-8e8c-26abbf32d749)
+
+
 ## Nicholas' Explanation for GPT:
 #### **Overview**
 This project implements an advanced **greedy algorithm** to schedule production tasks for a juice manufacturing line. The goal is to minimize penalties due to late deliveries, while also considering the setup times between switching from one juice type to another. This algorithm incorporates dynamic adjustment of setup time weight during scheduling to balance minimizing penalties and reducing setup overhead.
