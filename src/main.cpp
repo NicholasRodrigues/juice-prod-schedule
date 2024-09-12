@@ -30,9 +30,18 @@ int main() {
             std::cout << i << " ";
         }
         std::cout << std::endl;
-
         std::cout << "Total penalty cost for " << filename << ": " << totalPenaltyCost << std::endl;
         std::cout << "Total cost for " << filename << ": " << totalCost << std::endl;
+
+        schedule = RVND(schedule, orders, setupTimes, totalCost);
+
+        std::cout << "Optimized schedule for " << filename << ": ";
+        for (int i : schedule) {
+            std::cout << i << " ";
+        }
+
+        std::cout << std::endl;
+        std::cout << "Total cost after optimization for " << filename << ": " << totalCost << std::endl;
     }
 
     return 0;

@@ -8,6 +8,8 @@ include_directories(include)
 add_executable(juice_prod_schedule
         include/algorithm.h
         include/parser.h
+        include/neighborhoods.h
         src/algorithm.cpp
         src/main.cpp
-        src/parser.cpp)
+        src/parser.cpp
+        src/neighborhoods.cpp)
