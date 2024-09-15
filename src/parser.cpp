@@ -1,9 +1,9 @@
 #include "parser.h"
 #include <fstream>
 #include <iostream>
-#include <sstream>
 
-void parseInputFile(const std::string& filename, std::vector<Order>& orders, std::vector<std::vector<int>>& setupTimes) {
+void parseInputFile(const std::string& filename, std::vector<Order>& orders,
+                    std::vector<std::vector<int>>& setupTimes) {
     std::ifstream file(filename);
 
     if (!file.is_open()) {
