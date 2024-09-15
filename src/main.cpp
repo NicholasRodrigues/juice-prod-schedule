@@ -3,6 +3,13 @@
 #include <filesystem>
 #include "algorithm.h"
 #include "parser.h"
+#include <sys/resource.h>
+
+void printMemoryUsage() {
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    std::cout << "Maximum resident set size: " << usage.ru_maxrss << " kilobytes" << std::endl;
+}
 
 namespace fs = std::filesystem;
 
@@ -22,26 +29,44 @@ int main() {
 
         double totalPenaltyCost = 0.0;
         double totalCost = 0.0;
+        auto start = std::chrono::high_resolution_clock::now();
+        // Generate initial greedy schedule
+        std::vector<int> schedule = advancedGreedyAlgorithmWithDynamicWeight(orders, setupTimes,
+                                                                             finalSetupTimeWeight,
+                                                                             totalPenaltyCost, totalCost);
 
-        std::vector<int> schedule = advancedGreedyAlgorithmWithDynamicWeight(orders, setupTimes, finalSetupTimeWeight, totalPenaltyCost, totalCost);
-
-        std::cout << "Dynamic advanced greedy schedule for " << filename << ": ";
+        std::cout << "Initial greedy schedule: ";
         for (int i : schedule) {
             std::cout << i << " ";
         }
         std::cout << std::endl;
-        std::cout << "Total penalty cost for " << filename << ": " << totalPenaltyCost << std::endl;
-        std::cout << "Total cost for " << filename << ": " << totalCost << std::endl;
+        std::cout << "Total penalty cost: " << totalPenaltyCost << std::endl;
+        std::cout << "Total cost: " << totalCost << std::endl;
 
-        schedule = RVND(schedule, orders, setupTimes, totalCost);
+        // Perform RVND optimization
+        double totalCostBeforeOptimization = totalCost;
+        schedule = RVND(schedule, orders, setupTimes, totalCostBeforeOptimization);
 
-        std::cout << "Optimized schedule for " << filename << ": ";
+        // Post-optimization cost calculations
+        double totalCostAfterOptimization = 0.0;
+        double totalPenaltyCostAfterOptimization = 0.0;
+        calculateTotalCost(schedule, orders, setupTimes, totalCostAfterOptimization, totalPenaltyCostAfterOptimization);
+
+        std::cout << "Optimized schedule: ";
         for (int i : schedule) {
             std::cout << i << " ";
         }
-
         std::cout << std::endl;
-        std::cout << "Total cost after optimization for " << filename << ": " << totalCost << std::endl;
+        std::cout << "Total cost after optimization: " << totalCostAfterOptimization << std::endl;
+        std::cout << "Total penalty cost after optimization: " << totalPenaltyCostAfterOptimization << std::endl;
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
+        std::cout << "Total execution time for " << filename << ": " << elapsed.count() << " seconds" << std::endl;
+        printMemoryUsage();
+
+        orders.clear();
+        setupTimes.clear();
     }
 
     return 0;

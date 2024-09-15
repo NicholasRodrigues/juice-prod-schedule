@@ -1,197 +1,410 @@
 #include "neighborhoods.h"
+#include "algorithm.h"
 #include <algorithm>
-#include <iostream>
 
-// Utility to calculate the cost difference for a swap operation
-double calculateSwapCostDiff(int i, int j, std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double currentCost) {
-    int task_i = schedule[i];
-    int task_j = schedule[j];
+// Swap Neighborhood Function
+bool swapNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
+                      const std::vector<std::vector<int>>& setupTimes, double& totalCost) {
+    int n = schedule.size();
 
-    double oldCost = currentCost;
+    for (int i = 0; i < n - 1; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            double deltaCost = calculateSwapCostDifference(schedule, orders, setupTimes, i, j);
 
-    // Remove setup costs around i and j
-    if (i > 0) {
-        oldCost -= setupTimes[schedule[i - 1]][task_i];
-        oldCost += setupTimes[schedule[i - 1]][task_j];
-    }
-    if (i < schedule.size() - 1) {
-        oldCost -= setupTimes[task_i][schedule[i + 1]];
-        oldCost += setupTimes[task_j][schedule[i + 1]];
-    }
-    if (j > 0) {
-        oldCost -= setupTimes[schedule[j - 1]][task_j];
-        oldCost += setupTimes[schedule[j - 1]][task_i];
-    }
-    if (j < schedule.size() - 1) {
-        oldCost -= setupTimes[task_j][schedule[j + 1]];
-        oldCost += setupTimes[task_i][schedule[j + 1]];
-    }
-
-    // Adjust penalties for task i and task j
-    int currentTime = 0;
-    for (int k = 0; k < schedule.size(); ++k) {
-        int task = schedule[k];
-        currentTime += orders[task].processingTime;
-
-        if (currentTime > orders[task].dueTime) {
-            double penalty = orders[task].penaltyRate * (currentTime - orders[task].dueTime);
-            if (k == i || k == j) {
-                oldCost -= penalty;
+            if (deltaCost < -IMPROVEMENT_THRESHOLD) {
+                // Apply the swap
+                std::swap(schedule[i], schedule[j]);
+                totalCost += deltaCost;
+                return true;  // Improvement found
             }
+        }
+    }
+
+    return false;  // No improvement found
+}
+
+// Helper Function for Swap Neighborhood
+double calculateSwapCostDifference(const std::vector<int>& schedule, const std::vector<Order>& orders,
+                                   const std::vector<std::vector<int>>& setupTimes, int i, int j) {
+    int n = schedule.size();
+
+    // Determine the start position for recalculating cost
+    int start = std::min(i, j);
+
+    // Compute cumulative currentTime up to 'start'
+    int currentTime = 0;
+    int currentTask = -1;
+    for (int k = 0; k < start; ++k) {
+        int taskId = schedule[k];
+        if (currentTask >= 0) {
+            currentTime += setupTimes[currentTask][taskId];
+        }
+        currentTime += orders[taskId].processingTime;
+        currentTask = taskId;
+    }
+
+    int oldCurrentTime = currentTime;
+    int oldCurrentTask = currentTask;
+
+    // Calculate old cost from 'start' to 'end'
+    int end = std::max(i, j);
+    double oldCost = 0.0;
+    currentTime = oldCurrentTime;
+    currentTask = oldCurrentTask;
+    for (int k = start; k <= end; ++k) {
+        int taskId = schedule[k];
+        if (currentTask >= 0) {
+            int setup = setupTimes[currentTask][taskId];
+            currentTime += setup;
+            oldCost += setup;
+        }
+        currentTime += orders[taskId].processingTime;
+
+        // Penalty
+        if (currentTime > orders[taskId].dueTime) {
+            double penalty = orders[taskId].penaltyRate * (currentTime - orders[taskId].dueTime);
             oldCost += penalty;
         }
+
+        currentTask = taskId;
     }
 
-    return oldCost;
+    // Perform the swap
+    std::vector<int> newSchedule = schedule;
+    std::swap(newSchedule[i], newSchedule[j]);
+
+    // Calculate new cost from 'start' to 'end'
+    double newCost = 0.0;
+    currentTime = oldCurrentTime;
+    currentTask = oldCurrentTask;
+    for (int k = start; k <= end; ++k) {
+        int taskId = newSchedule[k];
+        if (currentTask >= 0) {
+            int setup = setupTimes[currentTask][taskId];
+            currentTime += setup;
+            newCost += setup;
+        }
+        currentTime += orders[taskId].processingTime;
+
+        // Penalty
+        if (currentTime > orders[taskId].dueTime) {
+            double penalty = orders[taskId].penaltyRate * (currentTime - orders[taskId].dueTime);
+            newCost += penalty;
+        }
+
+        currentTask = taskId;
+    }
+
+    double deltaCost = newCost - oldCost;
+    return deltaCost;
 }
 
-// Swap neighborhood function with dynamic cost update
-bool swapNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double& totalCost) {
-    bool improvementFound = false;
-    double bestCost = totalCost;
+// Two-Opt Neighborhood Function
+bool twoOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
+                        const std::vector<std::vector<int>>& setupTimes, double& totalCost) {
+    int n = schedule.size();
 
-    for (int i = 0; i < schedule.size() - 1; ++i) {
-        for (int j = i + 1; j < schedule.size(); ++j) {
+    for (int i = 0; i < n - 1; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            double deltaCost = calculateTwoOptCostDifference(schedule, orders, setupTimes, i, j);
 
-            double newCost = calculateSwapCostDiff(i, j, schedule, orders, setupTimes, totalCost);
-
-            if (newCost < bestCost) {
-                bestCost = newCost;
-                std::swap(schedule[i], schedule[j]);
-                improvementFound = true;
-                totalCost = newCost;
+            if (deltaCost < -IMPROVEMENT_THRESHOLD) {
+                // Perform the 2-opt move
+                std::reverse(schedule.begin() + i, schedule.begin() + j + 1);
+                totalCost += deltaCost;
+                return true;  // Improvement found
             }
         }
     }
 
-
-    return improvementFound;
+    return false;  // No improvement found
 }
 
-// Utility to calculate cost difference for a 2-opt operation
-double calculateTwoOptCostDiff(int i, int j, std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double currentCost) {
-    double oldCost = currentCost;
+// Helper Function for Two-Opt Neighborhood
+double calculateTwoOptCostDifference(const std::vector<int>& schedule, const std::vector<Order>& orders,
+                                     const std::vector<std::vector<int>>& setupTimes, int i, int j) {
+    int n = schedule.size();
 
-    // Remove the setup cost for the original sequence (i to j)
-    if (i > 0) {
-        oldCost -= setupTimes[schedule[i - 1]][schedule[i]];
-    }
-    if (j < schedule.size() - 1) {
-        oldCost -= setupTimes[schedule[j]][schedule[j + 1]];
-    }
+    // Determine the start position for recalculating cost
+    int start = i;
 
-    // Apply the 2-opt move (reverse the segment between i and j)
-    std::reverse(schedule.begin() + i, schedule.begin() + j + 1);
-
-    // Calculate the new setup cost
-    if (i > 0) {
-        oldCost += setupTimes[schedule[i - 1]][schedule[i]];
-    }
-    if (j < schedule.size() - 1) {
-        oldCost += setupTimes[schedule[j]][schedule[j + 1]];
-    }
-
-    return oldCost;
-}
-
-// 2-opt neighborhood function with dynamic cost update
-bool twoOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double& totalCost) {
-    bool improvementFound = false;
-    double bestCost = totalCost;
-
-    for (int i = 0; i < schedule.size() - 1; ++i) {
-        for (int j = i + 1; j < schedule.size(); ++j) {
-            double newCost = calculateTwoOptCostDiff(i, j, schedule, orders, setupTimes, totalCost);
-
-            if (newCost < bestCost) {
-                bestCost = newCost;
-                improvementFound = true;
-                totalCost = newCost;
-            }
-            std::reverse(schedule.begin() + i, schedule.begin() + j + 1);  // Revert the move for further iterations
+    // Compute cumulative currentTime up to 'start'
+    int currentTime = 0;
+    int currentTask = -1;
+    for (int k = 0; k < start; ++k) {
+        int taskId = schedule[k];
+        if (currentTask >= 0) {
+            currentTime += setupTimes[currentTask][taskId];
         }
+        currentTime += orders[taskId].processingTime;
+        currentTask = taskId;
     }
 
-    return improvementFound;
+    int oldCurrentTime = currentTime;
+    int oldCurrentTask = currentTask;
+
+    // Calculate old cost from 'start' to 'n - 1'
+    double oldCost = 0.0;
+    currentTime = oldCurrentTime;
+    currentTask = oldCurrentTask;
+    for (int k = start; k < n; ++k) {
+        int taskId = schedule[k];
+        if (currentTask >= 0) {
+            int setup = setupTimes[currentTask][taskId];
+            currentTime += setup;
+            oldCost += setup;
+        }
+        currentTime += orders[taskId].processingTime;
+
+        // Penalty
+        if (currentTime > orders[taskId].dueTime) {
+            double penalty = orders[taskId].penaltyRate * (currentTime - orders[taskId].dueTime);
+            oldCost += penalty;
+        }
+
+        currentTask = taskId;
+    }
+
+    // Perform the 2-opt move
+    std::vector<int> newSchedule = schedule;
+    std::reverse(newSchedule.begin() + i, newSchedule.begin() + j + 1);
+
+    // Calculate new cost from 'start' to 'n - 1'
+    double newCost = 0.0;
+    currentTime = oldCurrentTime;
+    currentTask = oldCurrentTask;
+    for (int k = start; k < n; ++k) {
+        int taskId = newSchedule[k];
+        if (currentTask >= 0) {
+            int setup = setupTimes[currentTask][taskId];
+            currentTime += setup;
+            newCost += setup;
+        }
+        currentTime += orders[taskId].processingTime;
+
+        // Penalty
+        if (currentTime > orders[taskId].dueTime) {
+            double penalty = orders[taskId].penaltyRate * (currentTime - orders[taskId].dueTime);
+            newCost += penalty;
+        }
+
+        currentTask = taskId;
+    }
+
+    double deltaCost = newCost - oldCost;
+    return deltaCost;
 }
 
-double calculateReinsertionCostDiff(int i, int newPos, std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double currentCost) {
-    double oldCost = currentCost;
+// Reinsertion Neighborhood Function
+bool reinsertionNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
+                             const std::vector<std::vector<int>>& setupTimes, double& totalCost) {
+    int n = schedule.size();
 
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j <= n; ++j) {
+            if (i == j || i == j - 1) continue;
 
-    // Ensure the indices are valid
-    if (schedule.empty() || i >= schedule.size() || i < 0 || newPos < 0 || newPos > schedule.size()) {
-        std::cerr << "Error: Invalid index in calculateReinsertionCostDiff! i: " << i << ", newPos: " << newPos << std::endl;
-        return oldCost; // Return current cost if indices are invalid
-    }
+            double deltaCost = calculateReinsertionCostDifference(schedule, orders, setupTimes, i, j);
 
-    // Extract the task at position i
-    int task = schedule[i];
-
-    // Remove the original setup costs around the task
-    if (i > 0) {
-        oldCost -= setupTimes[schedule[i - 1]][task];
-    }
-    if (i < schedule.size() - 1) {
-        oldCost -= setupTimes[task][schedule[i + 1]];
-    }
-
-    // Remove the task from its current position
-    schedule.erase(schedule.begin() + i);
-
-    // Adjust newPos if necessary (because of the erasure)
-    if (newPos > i) {
-        newPos--;
-    }
-
-    // Insert the task in the new position
-    if (newPos >= 0 && newPos <= schedule.size()) {
-        schedule.insert(schedule.begin() + newPos, task);
-    } else {
-        std::cerr << "Error: newPos is out of bounds! newPos: " << newPos << std::endl;
-        return oldCost;
-    }
-
-    // Add the new setup costs around the task
-    if (newPos > 0) {
-        oldCost += setupTimes[schedule[newPos - 1]][task];
-    }
-    if (newPos < schedule.size() - 1) {
-        oldCost += setupTimes[task][schedule[newPos + 1]];
-    }
-
-    return oldCost;
-}
-
-
-// Reinsertion neighborhood function with dynamic cost update
-bool reinsertionNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double& totalCost) {
-    bool improvementFound = false;
-    double bestCost = totalCost;
-
-
-    for (int i = 0; i < schedule.size(); ++i) {
-        for (int j = 0; j <= schedule.size(); ++j) {
-            if (i == j) continue;  // Skip reinserting in the same place
-
-            // Check that the schedule is valid before calling calculateReinsertionCostDiff
-            if (schedule.size() < 2) {
-                std::cerr << "Schedule too small to apply reinsertion!" << std::endl;
-                continue;
-            }
-
-
-            // Call the cost calculation with proper boundary checking
-            double newCost = calculateReinsertionCostDiff(i, j, schedule, orders, setupTimes, totalCost);
-
-            if (newCost < bestCost) {
-                bestCost = newCost;
-                improvementFound = true;
-                totalCost = newCost;
+            if (deltaCost < -IMPROVEMENT_THRESHOLD) {
+                // Perform the reinsertion
+                int task = schedule[i];
+                schedule.erase(schedule.begin() + i);
+                int insertPos = (j > i) ? j - 1 : j;
+                schedule.insert(schedule.begin() + insertPos, task);
+                totalCost += deltaCost;
+                return true;  // Improvement found
             }
         }
     }
 
-    return improvementFound;
+    return false;  // No improvement found
 }
 
+// Helper Function for Reinsertion Neighborhood
+double calculateReinsertionCostDifference(const std::vector<int>& schedule, const std::vector<Order>& orders,
+                                          const std::vector<std::vector<int>>& setupTimes, int i, int j) {
+    int n = schedule.size();
+
+    // Determine the start position for recalculating cost
+    int start = std::min(i, j == n ? n - 1 : j);
+
+    // Compute cumulative currentTime up to 'start'
+    int currentTime = 0;
+    int currentTask = -1;
+    for (int k = 0; k < start; ++k) {
+        int taskId = schedule[k];
+        if (currentTask >= 0) {
+            currentTime += setupTimes[currentTask][taskId];
+        }
+        currentTime += orders[taskId].processingTime;
+        currentTask = taskId;
+    }
+
+    int oldCurrentTime = currentTime;
+    int oldCurrentTask = currentTask;
+
+    // Calculate old cost from 'start' to 'n - 1'
+    double oldCost = 0.0;
+    currentTime = oldCurrentTime;
+    currentTask = oldCurrentTask;
+    for (int k = start; k < n; ++k) {
+        int taskId = schedule[k];
+        if (currentTask >= 0) {
+            int setup = setupTimes[currentTask][taskId];
+            currentTime += setup;
+            oldCost += setup;
+        }
+        currentTime += orders[taskId].processingTime;
+
+        // Penalty
+        if (currentTime > orders[taskId].dueTime) {
+            double penalty = orders[taskId].penaltyRate * (currentTime - orders[taskId].dueTime);
+            oldCost += penalty;
+        }
+
+        currentTask = taskId;
+    }
+
+    // Perform the reinsertion
+    std::vector<int> newSchedule = schedule;
+    int task = newSchedule[i];
+    newSchedule.erase(newSchedule.begin() + i);
+    int insertPos = (j > i) ? j - 1 : j;
+    newSchedule.insert(newSchedule.begin() + insertPos, task);
+
+    // Calculate new cost from 'start' to 'n - 1'
+    double newCost = 0.0;
+    currentTime = oldCurrentTime;
+    currentTask = oldCurrentTask;
+    for (int k = start; k < n; ++k) {
+        int taskId = newSchedule[k];
+        if (currentTask >= 0) {
+            int setup = setupTimes[currentTask][taskId];
+            currentTime += setup;
+            newCost += setup;
+        }
+        currentTime += orders[taskId].processingTime;
+
+        // Penalty
+        if (currentTime > orders[taskId].dueTime) {
+            double penalty = orders[taskId].penaltyRate * (currentTime - orders[taskId].dueTime);
+            newCost += penalty;
+        }
+
+        currentTask = taskId;
+    }
+
+    double deltaCost = newCost - oldCost;
+    return deltaCost;
+}
+
+// Or-Opt Neighborhood Function
+bool orOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
+                       const std::vector<std::vector<int>>& setupTimes, double& totalCost) {
+    int n = schedule.size();
+
+    for (int l = 1; l <= 3; ++l) {  // Or-Opt with sequences of length 1 to 3
+        for (int i = 0; i <= n - l; ++i) {
+            for (int j = 0; j <= n - l; ++j) {
+                if (j >= i && j <= i + l - 1) continue;
+
+                double deltaCost = calculateOrOptCostDifference(schedule, orders, setupTimes, i, j, l);
+
+                if (deltaCost < -IMPROVEMENT_THRESHOLD) {
+                    // Lets go to the or-opt boys
+                    std::vector<int> sequence(schedule.begin() + i, schedule.begin() + i + l);
+                    schedule.erase(schedule.begin() + i, schedule.begin() + i + l);
+                    int insertPos = (j > i) ? j - l + 1 : j;
+                    schedule.insert(schedule.begin() + insertPos, sequence.begin(), sequence.end());
+                    totalCost += deltaCost;
+                    return true;  // Improvement found
+                }
+            }
+        }
+    }
+
+    return false;  // No improvement found
+}
+
+// Helper Function for Or-Opt Neighborhood
+double calculateOrOptCostDifference(const std::vector<int>& schedule, const std::vector<Order>& orders,
+                                    const std::vector<std::vector<int>>& setupTimes, int i, int j, int l) {
+    int n = schedule.size();
+
+    // Determine positions affected by the move
+    int start = std::min(i, j);
+    int end = std::max(i + l - 1, j + l - 1);
+    if (end >= n) end = n - 1;
+
+    // Compute cumulative currentTime up to 'start'
+    int currentTime = 0;
+    int currentTask = -1;
+    for (int k = 0; k < start; ++k) {
+        int taskId = schedule[k];
+        if (currentTask >= 0) {
+            currentTime += setupTimes[currentTask][taskId];
+        }
+        currentTime += orders[taskId].processingTime;
+        currentTask = taskId;
+    }
+
+    int oldCurrentTime = currentTime;
+    int oldCurrentTask = currentTask;
+
+    // Calculate old cost from 'start' to 'end'
+    double oldCost = 0.0;
+    currentTime = oldCurrentTime;
+    currentTask = oldCurrentTask;
+
+    for (int k = start; k <= end; ++k) {
+        int taskId = schedule[k];
+        if (currentTask >= 0) {
+            int setupTime = setupTimes[currentTask][taskId];
+            currentTime += setupTime;
+            oldCost += setupTime;
+        }
+        currentTime += orders[taskId].processingTime;
+
+        // Penalty
+        if (currentTime > orders[taskId].dueTime) {
+            double penalty = orders[taskId].penaltyRate * (currentTime - orders[taskId].dueTime);
+            oldCost += penalty;
+        }
+
+        currentTask = taskId;
+    }
+
+    // Perform the Or-Opt move
+    std::vector<int> newSchedule = schedule;
+    std::vector<int> sequence(newSchedule.begin() + i, newSchedule.begin() + i + l);
+    newSchedule.erase(newSchedule.begin() + i, newSchedule.begin() + i + l);
+    int insertPos = (j > i) ? j - l + 1 : j;
+    newSchedule.insert(newSchedule.begin() + insertPos, sequence.begin(), sequence.end());
+
+    // Calculate new cost from 'start' to 'end'
+    double newCost = 0.0;
+    currentTime = oldCurrentTime;
+    currentTask = oldCurrentTask;
+
+    for (int k = start; k <= end; ++k) {
+        int taskId = newSchedule[k];
+        if (currentTask >= 0) {
+            int setupTime = setupTimes[currentTask][taskId];
+            currentTime += setupTime;
+            newCost += setupTime;
+        }
+        currentTime += orders[taskId].processingTime;
+
+        // Penalty
+        if (currentTime > orders[taskId].dueTime) {
+            double penalty = orders[taskId].penaltyRate * (currentTime - orders[taskId].dueTime);
+            newCost += penalty;
+        }
+
+        currentTask = taskId;
+    }
+
+    double deltaCost = newCost - oldCost;
+    return deltaCost;
+}
