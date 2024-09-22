@@ -1,142 +1,105 @@
 #include "algorithm.h"
 #include <algorithm>
-#include <vector>
+#include <cstdlib>
 #include <iostream>
+#include <climits>
 
-// Function to calculate total cost (penalties + setup times) and total penalty cost
-double calculateTotalCost(const std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double& totalPenaltyCost) {
-    double totalCost = 0.0;
-    totalPenaltyCost = 0.0;
-    int currentTime = 0;
-    int currentTask = -1;
+int calcularMultaTotal(const std::vector<Pedido> &pedidos, const std::vector<std::vector<int>> &setup)
+{
+    int tempoAtual = 0;
+    int multaTotal = 0;
+    int n = pedidos.size();
 
-    for (int i = 0; i < schedule.size(); ++i) {
-        int taskId = schedule[i];
-        const Order& order = orders[taskId];
+    for (int i = 0; i < n; i++)
+    {
+        int atraso = std::max(0, tempoAtual + pedidos[i].tempoProcessamento - pedidos[i].prazo);
+        multaTotal += atraso * pedidos[i].multaPorMinuto;
+        tempoAtual += pedidos[i].tempoProcessamento;
 
-        if (currentTask >= 0) {
-            totalCost += setupTimes[currentTask][taskId];
-            currentTime += setupTimes[currentTask][taskId];
+        if (i + 1 < n)
+        {
+            tempoAtual += setup[i][i + 1]; 
         }
-
-        currentTime += order.processingTime;
-
-        if (currentTime > order.dueTime) {
-            double penalty = order.penaltyRate * (currentTime - order.dueTime);
-            totalPenaltyCost += penalty;
-            totalCost += penalty;
-        }
-
-        currentTask = taskId;
     }
-
-    return totalCost;
+    return multaTotal;
 }
 
+std::vector<Pedido> algoritmoGuloso(const std::vector<Pedido> &pedidos, const std::vector<std::vector<int>> &setup)
+{
+    std::vector<Pedido> ordenados = pedidos;
+    std::sort(ordenados.begin(), ordenados.end(), [&](const Pedido &a, const Pedido &b)
+              {
+        double prioridadeA = (double)a.multaPorMinuto / (a.tempoProcessamento + setup[0][0]);
+        double prioridadeB = (double)b.multaPorMinuto / (b.tempoProcessamento + setup[0][0]);
+        return prioridadeA > prioridadeB; });
+    return ordenados;
+}
 
-// Calculates initial setup time weight based on averages
-double calculateInitialWeight(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes) {
-    int n = orders.size();
+std::vector<Pedido> buscaLocal(std::vector<Pedido> pedidos, const std::vector<std::vector<int>> &setup)
+{
+    bool melhoria = true;
 
-    double avgPenalty = 0.0;
-    for (const auto& order : orders) {
-        avgPenalty += order.penaltyRate;
-    }
-    avgPenalty /= n;
+    while (melhoria)
+    {
+        melhoria = false;
 
-    double avgProcessingTime = 0.0;
-    for (const auto& order : orders) {
-        avgProcessingTime += order.processingTime;
-    }
-    avgProcessingTime /= n;
+        std::vector<void (*)(std::vector<Pedido> &)> vizinhancas = {
+            [](std::vector<Pedido> &pedidos)
+            {
+                if (pedidos.size() < 2)
+                    return;
+                int i = rand() % pedidos.size();
+                int j = rand() % pedidos.size();
+                std::swap(pedidos[i], pedidos[j]);
+            },
+            [](std::vector<Pedido> &pedidos)
+            {
+                if (pedidos.size() < 2)
+                    return;
+                int i = rand() % pedidos.size();
+                Pedido pedidoRemovido = pedidos[i];
+                pedidos.erase(pedidos.begin() + i);
+                int j = rand() % pedidos.size();
+                pedidos.insert(pedidos.begin() + j, pedidoRemovido);
+            },
+            [](std::vector<Pedido> &pedidos)
+            {
+                if (pedidos.size() < 2)
+                    return;
+                int inicio = rand() % pedidos.size();
+                int fim = inicio + rand() % (pedidos.size() - inicio);
+                std::reverse(pedidos.begin() + inicio, pedidos.begin() + fim + 1);
+            },
+            [](std::vector<Pedido> &pedidos)
+            {
+                if (pedidos.size() < 4)
+                    return;
+                int tam = pedidos.size();
+                int blocoTam = rand() % (tam / 2) + 1;
+                int i = rand() % (tam - blocoTam);
+                int j = rand() % (tam - blocoTam);
+                for (int k = 0; k < blocoTam; ++k)
+                {
+                    std::swap(pedidos[i + k], pedidos[j + k]);
+                }
+            }};
 
-    double avgSetupTime = 0.0;
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            if (i != j) {
-                avgSetupTime += setupTimes[i][j];
+        for (int k = 0; k < vizinhancas.size(); k++)
+        {
+            std::vector<Pedido> novaSolucao = pedidos;
+            vizinhancas[k](novaSolucao); 
+
+            int multaAtual = calcularMultaTotal(pedidos, setup);
+            int multaNova = calcularMultaTotal(novaSolucao, setup);
+
+            if (multaNova < multaAtual)
+            {
+                pedidos = novaSolucao; 
+                melhoria = true;
+                break;
             }
         }
     }
-    avgSetupTime /= (n * (n - 1));
 
-    return (avgPenalty / avgSetupTime) * (avgProcessingTime / avgSetupTime);
-}
-
-double calculateDynamicWeight(int tasksCompleted, int totalTasks, double initialWeight, double finalWeight) {
-    return initialWeight + (finalWeight - initialWeight) * (static_cast<double>(tasksCompleted) / totalTasks);
-}
-
-double calculatePriority(const Order& order, int currentTime, int currentTask, const std::vector<std::vector<int>>& setupTimes, double dynamicSetupTimeWeight) {
-    int timeLeft = order.dueTime - currentTime;
-    if (timeLeft <= 0) {
-        timeLeft = 1;
-    }
-
-    int setupTime = (currentTask >= 0) ? setupTimes[currentTask][order.id] : 0;
-
-    return (static_cast<double>(order.penaltyRate) / timeLeft) * (1.0 / order.processingTime) + dynamicSetupTimeWeight * setupTime;
-}
-
-// Advanced Greedy Algorithm using averages for initial weight and dynamic adjustment
-// It calculates total cost (penalty + setup time) as it builds the schedule
-std::vector<int> advancedGreedyAlgorithmWithDynamicWeight(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double finalSetupTimeWeight, double& totalPenaltyCost, double& totalCost) {
-    std::vector<int> schedule;
-    std::vector<Order> remainingOrders = orders;
-    int currentTime = 0; // Start time of the schedule
-    int currentTask = -1; // No task initially
-    int totalTasks = orders.size();
-
-    // Initialize cost variables
-    totalPenaltyCost = 0.0;
-    totalCost = 0.0;
-
-    // Step 1: Calculate the initial setup time weight based on averages
-    double initialSetupTimeWeight = calculateInitialWeight(orders, setupTimes);
-
-    for (int tasksCompleted = 0; tasksCompleted < totalTasks; ++tasksCompleted) {
-        // Step 2: Dynamically adjust setup time weight based on progress
-        double dynamicSetupTimeWeight = calculateDynamicWeight(tasksCompleted, totalTasks, initialSetupTimeWeight, finalSetupTimeWeight);
-
-        // Find the task with the highest priority
-        auto bestOrder = remainingOrders.end();
-        double bestPriority = -1e9;
-
-        for (auto it = remainingOrders.begin(); it != remainingOrders.end(); ++it) {
-            double priority = calculatePriority(*it, currentTime, currentTask, setupTimes, dynamicSetupTimeWeight);
-            if (priority > bestPriority) {
-                bestPriority = priority;
-                bestOrder = it;
-            }
-        }
-
-        // Add the best order to the schedule
-        Order chosenOrder = *bestOrder;
-        schedule.push_back(chosenOrder.id);
-
-        // Update the current time and calculate setup time cost
-        if (currentTask >= 0) {
-            double setupTime = setupTimes[currentTask][chosenOrder.id];
-            totalCost += setupTime;
-            currentTime += setupTime;
-        }
-
-        // Add processing time
-        currentTime += chosenOrder.processingTime;
-
-        // Calculate penalty cost if the task is completed after due time
-        if (currentTime > chosenOrder.dueTime) {
-            double penalty = chosenOrder.penaltyRate * (currentTime - chosenOrder.dueTime);
-            totalPenaltyCost += penalty;
-            totalCost += penalty;  // Add penalty to total cost
-        }
-
-        // Remove the chosen order from the remaining orders
-        remainingOrders.erase(bestOrder);
-
-        // Update the current task
-        currentTask = chosenOrder.id;
-    }
-
-    return schedule;
+    return pedidos;
 }

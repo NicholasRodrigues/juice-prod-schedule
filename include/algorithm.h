@@ -2,18 +2,19 @@
 #define ALGORITHM_H
 
 #include <vector>
+#include <string>
 
-struct Order {
-    int id;
-    int processingTime;
-    int dueTime;
-    int penaltyRate;
+struct Pedido
+{
+    int tempoProcessamento;
+    int prazo;
+    int multaPorMinuto;
 };
 
-double calculateInitialWeight(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes);
+int calcularMultaTotal(const std::vector<Pedido> &pedidos, const std::vector<std::vector<int>> &setup);
 
-double calculateTotalCost(const std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double& totalPenaltyCost);
+std::vector<Pedido> algoritmoGuloso(const std::vector<Pedido> &pedidos, const std::vector<std::vector<int>> &setup);
 
-std::vector<int> advancedGreedyAlgorithmWithDynamicWeight(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, double finalSetupTimeWeight, double& totalPenaltyCost, double& totalCost);
+std::vector<Pedido> buscaLocal(std::vector<Pedido> pedidos, const std::vector<std::vector<int>> &setup);
 
 #endif

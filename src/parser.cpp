@@ -1,44 +1,47 @@
 #include "parser.h"
 #include <fstream>
 #include <iostream>
-#include <sstream>
 
-void parseInputFile(const std::string& filename, std::vector<Order>& orders, std::vector<std::vector<int>>& setupTimes) {
-    std::ifstream file(filename);
-
-    if (!file.is_open()) {
-        std::cerr << "Error opening file: " << filename << std::endl;
-        return;
+// Função para ler uma instância de arquivo
+bool lerInstancia(const std::string &caminhoArquivo, std::vector<Pedido> &pedidos, std::vector<std::vector<int>> &setup)
+{
+    std::ifstream arquivo(caminhoArquivo);
+    if (!arquivo.is_open())
+    {
+        std::cerr << "Erro ao abrir o arquivo: " << caminhoArquivo << std::endl;
+        return false;
     }
 
-    int numOrders;
-    file >> numOrders;
+    int n;
+    arquivo >> n;
+    pedidos.resize(n);
+    setup.resize(n, std::vector<int>(n));
 
-    orders.resize(numOrders);
-    setupTimes.resize(numOrders, std::vector<int>(numOrders));
-
-    // Read processing times
-    for (int i = 0; i < numOrders; ++i) {
-        file >> orders[i].processingTime;
-        orders[i].id = i;
+    for (int i = 0; i < n; i++)
+    {
+        arquivo >> pedidos[i].tempoProcessamento;
     }
-
-    // Read due times
-    for (int i = 0; i < numOrders; ++i) {
-        file >> orders[i].dueTime;
+    for (int i = 0; i < n; i++)
+    {
+        arquivo >> pedidos[i].prazo;
     }
-
-    // Read penalty rates
-    for (int i = 0; i < numOrders; ++i) {
-        file >> orders[i].penaltyRate;
+    for (int i = 0; i < n; i++)
+    {
+        arquivo >> pedidos[i].multaPorMinuto;
     }
-
-    // Read setup times matrix
-    for (int i = 0; i < numOrders; ++i) {
-        for (int j = 0; j < numOrders; ++j) {
-            file >> setupTimes[i][j];
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            arquivo >> setup[i][j];
         }
     }
 
-    file.close();
+    if (arquivo.fail())
+    {
+        std::cerr << "Erro ao ler dados do arquivo: " << caminhoArquivo << std::endl;
+        return false;
+    }
+
+    return true;
 }

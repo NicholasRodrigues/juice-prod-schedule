@@ -5,6 +5,6 @@
 #include <string>
 #include "algorithm.h"
 
-void parseInputFile(const std::string& filename, std::vector<Order>& orders, std::vector<std::vector<int>>& setupTimes);
+bool lerInstancia(const std::string &caminhoArquivo, std::vector<Pedido> &pedidos, std::vector<std::vector<int>> &setup);
 
 #endif
