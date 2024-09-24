@@ -3,24 +3,19 @@
 #include <filesystem>
 #include "algorithm.h"
 #include "parser.h"
-#include <sys/resource.h>
-
-void printMemoryUsage() {
-    struct rusage usage;
-    getrusage(RUSAGE_SELF, &usage);
-    std::cout << "Maximum resident set size: " << usage.ru_maxrss << " kilobytes" << std::endl;
-}
 
 namespace fs = std::filesystem;
 
-int main() {
+int main()
+{
     std::vector<Order> orders;
     std::vector<std::vector<int>> setupTimes;
 
-    std::string dataPath = "../data/";
+    std::string dataPath = "../instancias/";
     double finalSetupTimeWeight = 1.0;
 
-    for (const auto& entry : fs::directory_iterator(dataPath)) {
+    for (const auto &entry : fs::directory_iterator(dataPath))
+    {
         std::string filename = entry.path().string();
 
         std::cout << "Processing file: " << filename << std::endl;
@@ -36,7 +31,8 @@ int main() {
                                                                              totalPenaltyCost, totalCost);
 
         std::cout << "Initial greedy schedule: ";
-        for (int i : schedule) {
+        for (int i : schedule)
+        {
             std::cout << i << " ";
         }
         std::cout << std::endl;
@@ -53,7 +49,8 @@ int main() {
         calculateTotalCost(schedule, orders, setupTimes, totalCostAfterOptimization, totalPenaltyCostAfterOptimization);
 
         std::cout << "Optimized schedule: ";
-        for (int i : schedule) {
+        for (int i : schedule)
+        {
             std::cout << i << " ";
         }
         std::cout << std::endl;
@@ -63,7 +60,6 @@ int main() {
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = end - start;
         std::cout << "Total execution time for " << filename << ": " << elapsed.count() << " seconds" << std::endl;
-        printMemoryUsage();
 
         orders.clear();
         setupTimes.clear();
