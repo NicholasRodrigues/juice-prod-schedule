@@ -88,12 +88,12 @@ std::vector<int> RVND(std::vector<int>& schedule, const std::vector<Order>& orde
     bool improvement = true;
     int noImprovementCount = 0;
 
-    std::mt19937 g(RANDOM_SEED);
+    std::mt19937 g;
 
     while (improvement && noImprovementCount < MAX_NO_IMPROVEMENT_ITERATIONS) {
         adaptiveShuffle(neighborhoods, neighborhoodWeights, g);
         improvement = false;
-
+//        std::cout << "Total cost: " << totalCost << std::endl;
         for (size_t i = 0; i < neighborhoods.size(); ++i) {
             double previousCost = totalCost;
             bool neighborhoodImprovement = neighborhoods[i](schedule, orders, setupTimes, totalCost);
@@ -102,6 +102,7 @@ std::vector<int> RVND(std::vector<int>& schedule, const std::vector<Order>& orde
                 improvement = true;
                 neighborhoodWeights[i] += 1.0;
                 noImprovementCount = 0;
+//                std::cout << "Improved cost: " << totalCost << std::endl;
                 // Lets reshuffle the neighbors
                 break;
             } else {
@@ -228,3 +229,36 @@ std::vector<int> advancedGreedyAlgorithmWithDynamicWeight(const std::vector<Orde
 
     return schedule;
 }
+
+// Calculate total penalty for a given schedule
+// Calculate total penalty for a given schedule
+double calculateTotalPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
+                             const std::vector<std::vector<int>>& setupTimes) {
+    double totalPenaltyCost = 0.0;
+    int currentTime = 0;
+    int currentTask = -1;
+
+    for (size_t i = 0; i < schedule.size(); ++i) {
+        int taskId = schedule[i];
+        const Order& order = orders[taskId];
+
+        // Accumulate setup times
+        if (currentTask >= 0) {
+            currentTime += setupTimes[currentTask][taskId];
+        }
+
+        // Accumulate processing time
+        currentTime += order.processingTime;
+
+        // Calculate penalty if the task is late
+        if (currentTime > order.dueTime) {
+            double penalty = order.penaltyRate * (currentTime - order.dueTime);
+            totalPenaltyCost += penalty;
+        }
+
+        currentTask = taskId;
+    }
+
+    return totalPenaltyCost;
+}
+

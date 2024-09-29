@@ -5,7 +5,7 @@
 #include "order.h"
 
 // Constants for termination conditions
-constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 10000;
+constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 100000;
 constexpr double IMPROVEMENT_THRESHOLD = 1e-6;
 constexpr unsigned int RANDOM_SEED = 42;
 
@@ -15,6 +15,9 @@ void calculateTotalCost(const std::vector<int>& schedule, const std::vector<Orde
 
 double calculateTotalPenaltyCost(const std::vector<int>& schedule, const std::vector<Order>& orders,
                                  const std::vector<std::vector<int>>& setupTimes);
+
+double calculateTotalPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
+                             const std::vector<std::vector<int>>& setupTimes);
 
 std::vector<int> RVND(std::vector<int>& schedule, const std::vector<Order>& orders,
                       const std::vector<std::vector<int>>& setupTimes, double& totalCost);

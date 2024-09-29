@@ -31,12 +31,22 @@ void parseInputFile(const std::string& filename, std::vector<Order>& orders,
     // Read penalty rates
     for (int i = 0; i < numOrders; ++i) {
         file >> orders[i].penaltyRate;
+        // **Ensure penaltyRate is non-negative**
+        if (orders[i].penaltyRate < 0) {
+            std::cerr << "Error: Negative penalty rate for order " << i << std::endl;
+            orders[i].penaltyRate = 0.0;
+        }
     }
 
     // Read setup times matrix
     for (int i = 0; i < numOrders; ++i) {
         for (int j = 0; j < numOrders; ++j) {
             file >> setupTimes[i][j];
+            // **Ensure setup times are non-negative**
+            if (setupTimes[i][j] < 0) {
+                std::cerr << "Error: Negative setup time between orders " << i << " and " << j << std::endl;
+                setupTimes[i][j] = 0;
+            }
         }
     }
 
