@@ -4,6 +4,7 @@
 #include <iostream>
 #include <random>
 #include <functional>
+#include <numeric> // Para std::iota
 
 // Calculate total cost and total penalty cost for a given schedule
 void calculateTotalCost(const std::vector<int> &schedule, const std::vector<Order> &orders,
@@ -54,6 +55,12 @@ void adaptiveShuffle(std::vector<std::function<bool(std::vector<int> &, const st
 
     // Normalize the weights
     double totalWeight = std::accumulate(neighborhoodWeights.begin(), neighborhoodWeights.end(), 0.0);
+    if (totalWeight == 0.0)
+    {
+        std::cerr << "Error: Total weight is zero!" << std::endl;
+        return;
+    }
+
     std::vector<double> probabilities;
     for (double weight : neighborhoodWeights)
     {
@@ -68,7 +75,7 @@ void adaptiveShuffle(std::vector<std::function<bool(std::vector<int> &, const st
                                    const std::vector<std::vector<int>> &, double &)>>
         shuffledNeighborhoods;
 
-    // Ensure that all neighborhoods are considered
+    // Gera uma lista de índices e embaralha
     std::vector<int> indices(neighborhoods.size());
     std::iota(indices.begin(), indices.end(), 0);
     std::shuffle(indices.begin(), indices.end(), g);
@@ -81,7 +88,6 @@ void adaptiveShuffle(std::vector<std::function<bool(std::vector<int> &, const st
     neighborhoods = shuffledNeighborhoods;
 }
 
-// RVND Algorithm
 std::vector<int> RVND(std::vector<int> &schedule, const std::vector<Order> &orders,
                       const std::vector<std::vector<int>> &setupTimes, double &totalCost)
 {
@@ -89,18 +95,21 @@ std::vector<int> RVND(std::vector<int> &schedule, const std::vector<Order> &orde
                                    const std::vector<std::vector<int>> &, double &)>>
         neighborhoods = {
             swapNeighborhood,
-            twoOptNeighborhood,
             reinsertionNeighborhood,
-            orOptNeighborhood};
+            blockSwapNeighborhood};
 
+    // Inicializa os pesos das vizinhanças
     std::vector<double> neighborhoodWeights(neighborhoods.size(), 1.0);
+
     bool improvement = true;
     int noImprovementCount = 0;
 
+    // Inicializa o gerador de números aleatórios
     std::mt19937 g(RANDOM_SEED);
 
     while (improvement && noImprovementCount < MAX_NO_IMPROVEMENT_ITERATIONS)
     {
+        // Embaralha as vizinhanças adaptativamente
         adaptiveShuffle(neighborhoods, neighborhoodWeights, g);
         improvement = false;
 
@@ -114,7 +123,7 @@ std::vector<int> RVND(std::vector<int> &schedule, const std::vector<Order> &orde
                 improvement = true;
                 neighborhoodWeights[i] += 1.0;
                 noImprovementCount = 0;
-                // Lets reshuffle the neighbors
+                // Reembaralha as vizinhanças após uma melhoria
                 break;
             }
             else
@@ -164,6 +173,8 @@ double calculateInitialWeight(const std::vector<Order> &orders, const std::vecto
             }
         }
     }
+    if (count == 0)
+        return 0.0; // Evita divisão por zero
     avgSetupTime /= count;
 
     return (avgPenalty / avgSetupTime) * (avgProcessingTime / avgSetupTime);

@@ -4,30 +4,27 @@
 #include <vector>
 #include "order.h"
 
-// Function declarations
-bool swapNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                      const std::vector<std::vector<int>>& setupTimes, double& totalCost);
 
-bool twoOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                        const std::vector<std::vector<int>>& setupTimes, double& totalCost);
+bool swapNeighborhood(std::vector<int> &schedule, const std::vector<Order> &orders,
+                      const std::vector<std::vector<int>> &setupTimes, double &totalCost);
 
-bool reinsertionNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                             const std::vector<std::vector<int>>& setupTimes, double& totalCost);
 
-bool orOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                       const std::vector<std::vector<int>>& setupTimes, double& totalCost);
+bool reinsertionNeighborhood(std::vector<int> &schedule, const std::vector<Order> &orders,
+                             const std::vector<std::vector<int>> &setupTimes, double &totalCost);
 
-// Helper functions
-double calculateSwapCostDifference(const std::vector<int>& schedule, const std::vector<Order>& orders,
-                                   const std::vector<std::vector<int>>& setupTimes, int i, int j);
 
-double calculateTwoOptCostDifference(const std::vector<int>& schedule, const std::vector<Order>& orders,
-                                     const std::vector<std::vector<int>>& setupTimes, int i, int j);
+bool blockSwapNeighborhood(std::vector<int> &schedule, const std::vector<Order> &orders,
+                           const std::vector<std::vector<int>> &setupTimes, double &totalCost);
 
-double calculateReinsertionCostDifference(const std::vector<int>& schedule, const std::vector<Order>& orders,
-                                          const std::vector<std::vector<int>>& setupTimes, int i, int j);
+double calculateSwapCostDifference(const std::vector<int> &schedule, const std::vector<Order> &orders,
+                                   const std::vector<std::vector<int>> &setupTimes, int i, int j);
 
-double calculateOrOptCostDifference(const std::vector<int>& schedule, const std::vector<Order>& orders,
-                                    const std::vector<std::vector<int>>& setupTimes, int i, int j, int l);
+
+double calculateJanelsReinsertionCostDifference(const std::vector<int> &schedule, const std::vector<Order> &orders,
+                                                const std::vector<std::vector<int>> &setupTimes, int i, int j);
+
+
+double calculateBlockSwapCostDifference(const std::vector<int> &schedule, const std::vector<Order> &orders,
+                                        const std::vector<std::vector<int>> &setupTimes, int start1, int end1, int start2, int end2);
 
 #endif // NEIGHBORHOODS_H
