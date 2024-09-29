@@ -85,3 +85,6 @@ Example (`input1.txt`):
 #### **Future Improvements**
 - **Metaheuristics**: This greedy algorithm can serve as the base for more advanced metaheuristics such as **GRASP**, **VND**, or **ILS**.
 - **Parameter Tuning**: The current setup time weight is dynamically adjusted but could be fine-tuned further based on specific production needs.
+
+# Current Optimal Soluction:
+https://docs.google.com/document/d/1jYVRpInC2Yf4MYk6mSqJMu2De8YnHv_AlNeNlv3g8yE/edit
