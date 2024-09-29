@@ -41,6 +41,7 @@ int main() {
         }
         std::cout << std::endl;
         std::cout << "Total penalty cost: " << totalPenaltyCost << std::endl;
+        std::cout << "Penalty: " << calculateTotalPenalty(schedule, orders, setupTimes) << std::endl;
         std::cout << "Total cost: " << totalCost << std::endl;
 
         // Perform RVND optimization
@@ -59,6 +60,7 @@ int main() {
         std::cout << std::endl;
         std::cout << "Total cost after optimization: " << totalCostAfterOptimization << std::endl;
         std::cout << "Total penalty cost after optimization: " << totalPenaltyCostAfterOptimization << std::endl;
+        std::cout << "Penalty after optimization: " << calculateTotalPenalty(schedule, orders, setupTimes) << std::endl;
 
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = end - start;
