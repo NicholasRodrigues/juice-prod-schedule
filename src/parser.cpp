@@ -1,9 +1,14 @@
-#include "parser.h"
+#include <string>
+#include <vector>
 #include <fstream>
 #include <iostream>
+#include <sstream>
+#include "parser.h"
+#include "order.h"
 
 void parseInputFile(const std::string& filename, std::vector<Order>& orders,
-                    std::vector<std::vector<int>>& setupTimes) {
+                    std::vector<std::vector<int>>& setupTimes,
+                    std::vector<int>& initialSetupTimes) {
     std::ifstream file(filename);
 
     if (!file.is_open()) {
@@ -14,35 +19,55 @@ void parseInputFile(const std::string& filename, std::vector<Order>& orders,
     int numOrders;
     file >> numOrders;
 
-    orders.resize(numOrders);
-    setupTimes.resize(numOrders, std::vector<int>(numOrders));
+    // Skip the empty line
+    std::string line;
+    std::getline(file, line); // To move to the next line after numOrders
+    std::getline(file, line); // Empty line
 
-    // Read processing times
+    orders.resize(numOrders);
+
+    // Read processing times (array t)
     for (int i = 0; i < numOrders; ++i) {
         file >> orders[i].processingTime;
         orders[i].id = i;
     }
 
-    // Read due times
+    // Read due times (array p)
     for (int i = 0; i < numOrders; ++i) {
         file >> orders[i].dueTime;
     }
 
-    // Read penalty rates
+    // Read penalty rates (array w)
     for (int i = 0; i < numOrders; ++i) {
         file >> orders[i].penaltyRate;
-        // **Ensure penaltyRate is non-negative**
         if (orders[i].penaltyRate < 0) {
             std::cerr << "Error: Negative penalty rate for order " << i << std::endl;
             orders[i].penaltyRate = 0.0;
         }
     }
 
-    // Read setup times matrix
+    // Skip the empty line before the setup times matrix
+    std::getline(file, line);
+    std::getline(file, line); // Empty line
+
+    // Read initial setup times (s0j)
+    initialSetupTimes.resize(numOrders);
+    for (int j = 0; j < numOrders; ++j) {
+        if (!(file >> initialSetupTimes[j])) {
+            std::cerr << "Error reading initial setup time for order " << j << std::endl;
+            initialSetupTimes[j] = 0;
+        }
+    }
+
+    // Read setup times matrix (sij)
+    setupTimes.resize(numOrders, std::vector<int>(numOrders));
+
     for (int i = 0; i < numOrders; ++i) {
         for (int j = 0; j < numOrders; ++j) {
-            file >> setupTimes[i][j];
-            // **Ensure setup times are non-negative**
+            if (!(file >> setupTimes[i][j])) {
+                std::cerr << "Error reading setup time between orders " << i << " and " << j << std::endl;
+                setupTimes[i][j] = 0;
+            }
             if (setupTimes[i][j] < 0) {
                 std::cerr << "Error: Negative setup time between orders " << i << " and " << j << std::endl;
                 setupTimes[i][j] = 0;

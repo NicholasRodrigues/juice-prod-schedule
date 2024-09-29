@@ -1,16 +1,12 @@
 #include "algorithm.h"
 #include "neighborhoods.h"
-#include <algorithm>
 #include <iostream>
-#include <random>
+#include <chrono>
 
-
-
-// Calculate total cost and total penalty cost for a given schedule
-void calculateTotalCost(const std::vector<int>& schedule, const std::vector<Order>& orders,
-                        const std::vector<std::vector<int>>& setupTimes, double& totalCost, double& totalPenaltyCost) {
-    totalCost = 0.0;
-    totalPenaltyCost = 0.0;
+double calculateTotalPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
+                             const std::vector<std::vector<int>>& setupTimes,
+                             const std::vector<int>& initialSetupTimes) {
+    double totalPenaltyCost = 0.0;
     int currentTime = 0;
     int currentTask = -1;
 
@@ -18,30 +14,114 @@ void calculateTotalCost(const std::vector<int>& schedule, const std::vector<Orde
         int taskId = schedule[i];
         const Order& order = orders[taskId];
 
-        // Accumulate setup times
+        int setupTime = 0;
         if (currentTask >= 0) {
-            totalCost += setupTimes[currentTask][taskId];
-            currentTime += setupTimes[currentTask][taskId];
+            setupTime = setupTimes[currentTask][taskId];
+        } else {
+            setupTime = initialSetupTimes[taskId];
         }
+        currentTime += setupTime;
 
-        // Accumulate processing time
         currentTime += order.processingTime;
 
-        // Calculate penalty if the task is late
         if (currentTime > order.dueTime) {
             double penalty = order.penaltyRate * (currentTime - order.dueTime);
             totalPenaltyCost += penalty;
-            totalCost += penalty;
         }
 
         currentTask = taskId;
     }
+
+    return totalPenaltyCost;
+}
+
+// Greedy Algorithm using Earliest Due Date (EDD) heuristic
+std::vector<int> greedyAlgorithm(const std::vector<Order>& orders,
+                                 const std::vector<std::vector<int>>& setupTimes,
+                                 const std::vector<int>& initialSetupTimes,
+                                 double& totalPenaltyCost) {
+    int n = orders.size();
+    std::vector<int> schedule;
+    int currentTime = 0;
+    int currentTask = -1;
+
+    totalPenaltyCost = 0.0;
+
+    // Sort orders based on Earliest Due Date (EDD)
+    std::vector<Order> sortedOrders = orders;
+    std::sort(sortedOrders.begin(), sortedOrders.end(), [](const Order& a, const Order& b) {
+        return a.dueTime < b.dueTime;
+    });
+
+    for (const auto& order : sortedOrders) {
+        int taskId = order.id;
+
+        int setupTime = (currentTask >= 0) ? setupTimes[currentTask][taskId] : initialSetupTimes[taskId];
+
+        currentTime += setupTime + order.processingTime;
+
+        if (currentTime > order.dueTime) {
+            double penalty = order.penaltyRate * (currentTime - order.dueTime);
+            totalPenaltyCost += penalty;
+        }
+
+        schedule.push_back(taskId);
+        currentTask = taskId;
+    }
+
+    return schedule;
+}
+
+std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
+                              const std::vector<std::vector<int>>& setupTimes,
+                              const std::vector<int>& initialSetupTimes) {
+    std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
+            const std::vector<std::vector<int>>&,
+            const std::vector<int>&)> > neighborhoods = {
+        reinsertionNeighborhood,
+        orOptNeighborhood,
+        swapNeighborhood
+    };
+
+    std::vector<double> neighborhoodWeights(neighborhoods.size(), 1.0);
+    std::mt19937 rng(std::random_device{}());
+
+    bool improvement = true;
+    int noImprovementCount = 0;
+
+    while (improvement && noImprovementCount < MAX_NO_IMPROVEMENT_ITERATIONS) {
+        adaptiveShuffle(neighborhoods, neighborhoodWeights, rng);
+
+        improvement = false;
+        for (size_t i = 0; i < neighborhoods.size(); ++i) {
+            double previousPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
+            bool neighborhoodImprovement = neighborhoods[i](schedule, orders, setupTimes, initialSetupTimes);
+
+            double currentPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
+
+            if (neighborhoodImprovement && currentPenalty < previousPenalty - IMPROVEMENT_THRESHOLD) {
+                improvement = true;
+                neighborhoodWeights[i] += 1.0;
+                noImprovementCount = 0;
+                break;  // Restart with reshuffled neighborhoods
+            } else {
+                neighborhoodWeights[i] = std::max(0.1, neighborhoodWeights[i] * 0.9);
+            }
+        }
+
+        if (!improvement) {
+            noImprovementCount++;
+        }
+    }
+
+    return schedule;
 }
 
 // Shuffle neighborhoods based on their weights
 void adaptiveShuffle(std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
-                      const std::vector<std::vector<int>>&, double&)>>& neighborhoods,
-                      std::vector<double>& neighborhoodWeights, std::mt19937& g) {
+                          const std::vector<std::vector<int>>&,
+                          const std::vector<int>&)> >& neighborhoods,
+                          std::vector<double>& neighborhoodWeights, std::mt19937& g) {
     if (neighborhoods.empty() || neighborhoodWeights.empty()) {
         std::cerr << "Error: Neighborhoods or weights are empty!" << std::endl;
         return;
@@ -59,9 +139,10 @@ void adaptiveShuffle(std::vector<std::function<bool(std::vector<int>&, const std
 
     // Shuffle the neighborhoods based on the distribution
     std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
-            const std::vector<std::vector<int>>&, double&)>> shuffledNeighborhoods;
+            const std::vector<std::vector<int>>&,
+            const std::vector<int>&)> > shuffledNeighborhoods;
 
-    // Ensure that all neighborhoods are considered
+    // Ensuring that all neighborhoods are considered
     std::vector<int> indices(neighborhoods.size());
     std::iota(indices.begin(), indices.end(), 0);
     std::shuffle(indices.begin(), indices.end(), g);
@@ -73,192 +154,61 @@ void adaptiveShuffle(std::vector<std::function<bool(std::vector<int>&, const std
     neighborhoods = shuffledNeighborhoods;
 }
 
-// RVND Algorithm
-std::vector<int> RVND(std::vector<int>& schedule, const std::vector<Order>& orders,
-                      const std::vector<std::vector<int>>& setupTimes, double& totalCost) {
-    std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
-            const std::vector<std::vector<int>>&, double&)>> neighborhoods = {
-        swapNeighborhood,
-        twoOptNeighborhood,
-        reinsertionNeighborhood,
-        orOptNeighborhood
-    };
+// Perturbation function for ILS
+void perturbSolution(std::vector<int>& schedule) {
+    int n = schedule.size();
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> dist(0, n - 1);
 
-    std::vector<double> neighborhoodWeights(neighborhoods.size(), 1.0);
-    bool improvement = true;
-    int noImprovementCount = 0;
+    // Randomly select subsequence length
+    int l = std::uniform_int_distribution<int>(PERTURBATION_STRENGTH_MIN, PERTURBATION_STRENGTH_MAX)(rng);
 
-    std::mt19937 g;
+    // Perform a random reinsertion perturbation
+    //  Using reinsertion perturbation as it is less destructive than other perturbation methods
+    int i = dist(rng) % (n - l + 1);
+    int j = dist(rng);
 
-    while (improvement && noImprovementCount < MAX_NO_IMPROVEMENT_ITERATIONS) {
-        adaptiveShuffle(neighborhoods, neighborhoodWeights, g);
-        improvement = false;
-//        std::cout << "Total cost: " << totalCost << std::endl;
-        for (size_t i = 0; i < neighborhoods.size(); ++i) {
-            double previousCost = totalCost;
-            bool neighborhoodImprovement = neighborhoods[i](schedule, orders, setupTimes, totalCost);
+    if (j >= i && j <= i + l - 1) {
+        j = (j + l) % n;
+    }
 
-            if (neighborhoodImprovement && totalCost < previousCost - IMPROVEMENT_THRESHOLD) {
-                improvement = true;
-                neighborhoodWeights[i] += 1.0;
-                noImprovementCount = 0;
-//                std::cout << "Improved cost: " << totalCost << std::endl;
-                // Lets reshuffle the neighbors
-                break;
-            } else {
-                neighborhoodWeights[i] = std::max(0.1, neighborhoodWeights[i] * 0.9);
+    std::vector<int> subsequence(schedule.begin() + i, schedule.begin() + i + l);
+    schedule.erase(schedule.begin() + i, schedule.begin() + i + l);
+    int insertPos = (j > i) ? j - l : j;
+    schedule.insert(schedule.begin() + insertPos, subsequence.begin(), subsequence.end());
+}
+
+std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<Order>& orders,
+                     const std::vector<std::vector<int>>& setupTimes,
+                     const std::vector<int>& initialSetupTimes) {
+    std::vector<int> bestSolution = initialSchedule;
+    double bestPenalty = calculateTotalPenalty(bestSolution, orders, setupTimes, initialSetupTimes);
+
+    std::vector<int> currentSolution = bestSolution;
+    int noImprovementIterations = 0;
+    int perturbationStrength = PERTURBATION_STRENGTH_MIN;
+
+    for (int iter = 0; iter < MAX_ILS_ITERATIONS; ++iter) {
+        currentSolution = adaptiveRVND(currentSolution, orders, setupTimes, initialSetupTimes);
+        double currentPenalty = calculateTotalPenalty(currentSolution, orders, setupTimes, initialSetupTimes);
+
+        if (currentPenalty < bestPenalty - IMPROVEMENT_THRESHOLD) {
+            bestSolution = currentSolution;
+            bestPenalty = currentPenalty;
+            noImprovementIterations = 0;
+            perturbationStrength = PERTURBATION_STRENGTH_MIN;  // Reset perturbation strength
+        } else {
+            noImprovementIterations++;
+            if (noImprovementIterations >= MAX_NO_IMPROVEMENT_ITERATIONS) {
+                // Increase perturbation strength to escape local optima
+                perturbationStrength = std::min(perturbationStrength + 1, PERTURBATION_STRENGTH_MAX);
+                noImprovementIterations = 0;
             }
         }
 
-        if (!improvement) {
-            noImprovementCount++;
-        }
+        // Perturb the current solution
+        perturbSolution(currentSolution);
     }
 
-    return schedule;
+    return bestSolution;
 }
-
-// Calculates initial setup time weight based on averages
-double calculateInitialWeight(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes) {
-    int n = orders.size();
-
-    double avgPenalty = 0.0;
-    for (const auto& order : orders) {
-        avgPenalty += order.penaltyRate;
-    }
-    avgPenalty /= n;
-
-    double avgProcessingTime = 0.0;
-    for (const auto& order : orders) {
-        avgProcessingTime += order.processingTime;
-    }
-    avgProcessingTime /= n;
-
-    double avgSetupTime = 0.0;
-    int count = 0;
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            if (i != j) {
-                avgSetupTime += setupTimes[i][j];
-                count++;
-            }
-        }
-    }
-    avgSetupTime /= count;
-
-    return (avgPenalty / avgSetupTime) * (avgProcessingTime / avgSetupTime);
-}
-
-double calculateDynamicWeight(int tasksCompleted, int totalTasks, double initialWeight, double finalWeight) {
-    return initialWeight + (finalWeight - initialWeight) * (static_cast<double>(tasksCompleted) / totalTasks);
-}
-
-double calculatePriority(const Order& order, int currentTime, int currentTask,
-                         const std::vector<std::vector<int>>& setupTimes, double dynamicSetupTimeWeight) {
-    int timeLeft = order.dueTime - currentTime;
-    if (timeLeft <= 0) {
-        timeLeft = 1;
-    }
-
-    int setupTime = (currentTask >= 0) ? setupTimes[currentTask][order.id] : 0;
-
-    // Look-ahead to anticipate future penalties
-    double estimatedFuturePenalty = (order.penaltyRate * std::max(0, (currentTime + setupTime + order.processingTime) - order.dueTime));
-
-    double priority = - (dynamicSetupTimeWeight * setupTime + estimatedFuturePenalty);
-
-    return priority;
-}
-
-std::vector<int> advancedGreedyAlgorithmWithDynamicWeight(const std::vector<Order>& orders,
-                                                          const std::vector<std::vector<int>>& setupTimes,
-                                                          double finalSetupTimeWeight, double& totalPenaltyCost,
-                                                          double& totalCost) {
-    std::vector<int> schedule;
-    std::vector<bool> scheduled(orders.size(), false);
-    int currentTime = 0;
-    int currentTask = -1;
-    int totalTasks = orders.size();
-
-    totalPenaltyCost = 0.0;
-    totalCost = 0.0;
-
-    double initialSetupTimeWeight = calculateInitialWeight(orders, setupTimes);
-
-    for (int tasksCompleted = 0; tasksCompleted < totalTasks; ++tasksCompleted) {
-        double dynamicSetupTimeWeight = calculateDynamicWeight(tasksCompleted, totalTasks,
-                                                               initialSetupTimeWeight, finalSetupTimeWeight);
-
-        int bestOrderIndex = -1;
-        double bestPriority = -std::numeric_limits<double>::infinity();
-
-        for (int idx = 0; idx < orders.size(); ++idx) {
-            if (scheduled[idx]) continue;
-
-            const Order& order = orders[idx];
-            double priority = calculatePriority(order, currentTime, currentTask, setupTimes, dynamicSetupTimeWeight);
-            if (priority > bestPriority) {
-                bestPriority = priority;
-                bestOrderIndex = idx;
-            }
-        }
-
-        if (bestOrderIndex == -1) {
-            std::cerr << "Error: No unscheduled orders remaining!" << std::endl;
-            break;
-        }
-
-        const Order& chosenOrder = orders[bestOrderIndex];
-        schedule.push_back(chosenOrder.id);
-        scheduled[bestOrderIndex] = true;
-
-        if (currentTask >= 0) {
-            currentTime += setupTimes[currentTask][chosenOrder.id];
-            totalCost += setupTimes[currentTask][chosenOrder.id];
-        }
-        currentTime += chosenOrder.processingTime;
-
-        if (currentTime > chosenOrder.dueTime) {
-            double penalty = chosenOrder.penaltyRate * (currentTime - chosenOrder.dueTime);
-            totalPenaltyCost += penalty;
-            totalCost += penalty;
-        }
-
-        currentTask = chosenOrder.id;
-    }
-
-    return schedule;
-}
-
-// Calculate total penalty for a given schedule
-// Calculate total penalty for a given schedule
-double calculateTotalPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
-                             const std::vector<std::vector<int>>& setupTimes) {
-    double totalPenaltyCost = 0.0;
-    int currentTime = 0;
-    int currentTask = -1;
-
-    for (size_t i = 0; i < schedule.size(); ++i) {
-        int taskId = schedule[i];
-        const Order& order = orders[taskId];
-
-        // Accumulate setup times
-        if (currentTask >= 0) {
-            currentTime += setupTimes[currentTask][taskId];
-        }
-
-        // Accumulate processing time
-        currentTime += order.processingTime;
-
-        // Calculate penalty if the task is late
-        if (currentTime > order.dueTime) {
-            double penalty = order.penaltyRate * (currentTime - order.dueTime);
-            totalPenaltyCost += penalty;
-        }
-
-        currentTask = taskId;
-    }
-
-    return totalPenaltyCost;
-}
-
