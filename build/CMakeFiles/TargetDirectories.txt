@@ -1,0 +1,3 @@
+/Users/felipeduarte/juice-prod-schedule/build/CMakeFiles/juice_prod_schedule.dir
+/Users/felipeduarte/juice-prod-schedule/build/CMakeFiles/edit_cache.dir
+/Users/felipeduarte/juice-prod-schedule/build/CMakeFiles/rebuild_cache.dir

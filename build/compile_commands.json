@@ -1,0 +1,26 @@
+[
+{
+  "directory": "/Users/felipeduarte/juice-prod-schedule/build",
+  "command": "/usr/bin/clang++  -I/Users/felipeduarte/juice-prod-schedule/include -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk -o CMakeFiles/juice_prod_schedule.dir/src/algorithm.cpp.o -c /Users/felipeduarte/juice-prod-schedule/src/algorithm.cpp",
+  "file": "/Users/felipeduarte/juice-prod-schedule/src/algorithm.cpp",
+  "output": "CMakeFiles/juice_prod_schedule.dir/src/algorithm.cpp.o"
+},
+{
+  "directory": "/Users/felipeduarte/juice-prod-schedule/build",
+  "command": "/usr/bin/clang++  -I/Users/felipeduarte/juice-prod-schedule/include -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk -o CMakeFiles/juice_prod_schedule.dir/src/main.cpp.o -c /Users/felipeduarte/juice-prod-schedule/src/main.cpp",
+  "file": "/Users/felipeduarte/juice-prod-schedule/src/main.cpp",
+  "output": "CMakeFiles/juice_prod_schedule.dir/src/main.cpp.o"
+},
+{
+  "directory": "/Users/felipeduarte/juice-prod-schedule/build",
+  "command": "/usr/bin/clang++  -I/Users/felipeduarte/juice-prod-schedule/include -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk -o CMakeFiles/juice_prod_schedule.dir/src/parser.cpp.o -c /Users/felipeduarte/juice-prod-schedule/src/parser.cpp",
+  "file": "/Users/felipeduarte/juice-prod-schedule/src/parser.cpp",
+  "output": "CMakeFiles/juice_prod_schedule.dir/src/parser.cpp.o"
+},
+{
+  "directory": "/Users/felipeduarte/juice-prod-schedule/build",
+  "command": "/usr/bin/clang++  -I/Users/felipeduarte/juice-prod-schedule/include -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk -o CMakeFiles/juice_prod_schedule.dir/src/neighborhoods.cpp.o -c /Users/felipeduarte/juice-prod-schedule/src/neighborhoods.cpp",
+  "file": "/Users/felipeduarte/juice-prod-schedule/src/neighborhoods.cpp",
+  "output": "CMakeFiles/juice_prod_schedule.dir/src/neighborhoods.cpp.o"
+}
+]
