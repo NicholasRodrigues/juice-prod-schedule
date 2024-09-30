@@ -233,7 +233,7 @@ std::vector<int> ILS(const std::vector<int> &initialSchedule, const std::vector<
         }
         else
         {
-            noImprovementIterations++;
+            noImprovementIterations++; 
             if (noImprovementIterations >= MAX_NO_IMPROVEMENT_ITERATIONS)
             {
                 // Increase perturbation strength to escape local optima

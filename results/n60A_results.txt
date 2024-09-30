@@ -1,0 +1,2 @@
+Run #1 - Penalty: 630, GAP: 39.0728%, Execution Time: seconds seconds
+Run #1 - Penalty: 633, GAP: 39.7351%, Execution Time: seconds seconds
