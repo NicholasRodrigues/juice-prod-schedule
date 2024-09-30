@@ -1,0 +1,14 @@
+Run #1 - Penalty: 0, GAP: nan%, Execution Time: seconds seconds
+Run #2 - Penalty: 0, GAP: nan%, Execution Time: seconds seconds
+Run #3 - Penalty: 0, GAP: nan%, Execution Time: seconds seconds
+Run #4 - Penalty: 0, GAP: nan%, Execution Time: seconds seconds
+Run #5 - Penalty: 0, GAP: nan%, Execution Time: seconds seconds
+Run #6 - Penalty: 0, GAP: nan%, Execution Time: seconds seconds
+Run #7 - Penalty: 0, GAP: nan%, Execution Time: seconds seconds
+Run #8 - Penalty: 0, GAP: nan%, Execution Time: seconds seconds
+Run #9 - Penalty: 0, GAP: nan%, Execution Time: seconds seconds
+Run #10 - Penalty: 0, GAP: nan%, Execution Time: seconds seconds
+Best result for n60C: 
+Penalty: 0, GAP: nan%, Execution Time: seconds seconds
+Schedule: 33 2 48 54 31 56 51 17 25 13 38 0 42 36 47 28 43 22 27 41 59 24 32 23 39 55 3 34 16 11 26 10 6 49 21 9 52 18 46 50 5 57 7 58 20 40 37 44 19 8 14 30 29 15 1 12 53 4 45 
+--------------------------------

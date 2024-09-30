@@ -1,0 +1,14 @@
+Run #1 - Penalty: 70066, GAP: 1.39504%, Execution Time: seconds seconds
+Run #2 - Penalty: 69447, GAP: 0.499262%, Execution Time: seconds seconds
+Run #3 - Penalty: 70254, GAP: 1.6671%, Execution Time: seconds seconds
+Run #4 - Penalty: 69845, GAP: 1.07522%, Execution Time: seconds seconds
+Run #5 - Penalty: 69103, GAP: 0.00144714%, Execution Time: seconds seconds
+Run #6 - Penalty: 70254, GAP: 1.6671%, Execution Time: seconds seconds
+Run #7 - Penalty: 69628, GAP: 0.761194%, Execution Time: seconds seconds
+Run #8 - Penalty: 69984, GAP: 1.27637%, Execution Time: seconds seconds
+Run #9 - Penalty: 69628, GAP: 0.761194%, Execution Time: seconds seconds
+Run #10 - Penalty: 70329, GAP: 1.77564%, Execution Time: seconds seconds
+Best result for n60D: 
+Penalty: 69103, GAP: 0.00144714%, Execution Time: seconds seconds
+Schedule: 30 2 37 31 36 46 34 38 16 57 4 3 39 43 17 28 41 50 35 21 49 19 27 51 10 20 23 56 40 42 24 13 8 29 9 26 44 32 52 0 48 33 53 47 12 15 14 6 54 1 55 18 11 7 59 5 25 58 45 
+--------------------------------

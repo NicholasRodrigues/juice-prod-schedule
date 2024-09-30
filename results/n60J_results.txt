@@ -1,0 +1,8 @@
+Run #1 - Penalty: 55210, GAP: 3.09028%, Execution Time: seconds seconds
+Run #2 - Penalty: 54937, GAP: 2.58052%, Execution Time: seconds seconds
+Run #3 - Penalty: 54582, GAP: 1.91765%, Execution Time: seconds seconds
+Run #4 - Penalty: 54959, GAP: 2.6216%, Execution Time: seconds seconds
+Run #5 - Penalty: 54601, GAP: 1.95313%, Execution Time: seconds seconds
+Run #6 - Penalty: 54955, GAP: 2.61414%, Execution Time: seconds seconds
+Run #7 - Penalty: 54622, GAP: 1.99234%, Execution Time: seconds seconds
+Run #8 - Penalty: 55924, GAP: 4.42349%, Execution Time: seconds seconds

@@ -1,0 +1,9 @@
+n60A - Best Penalty: 543, Best GAP: 19.8675%, Execution Time: seconds seconds
+n60B - Best Penalty: 2461, Best GAP: 40.0683%, Execution Time: seconds seconds
+n60C - Best Penalty: 0, Best GAP: nan%, Execution Time: seconds seconds
+n60D - Best Penalty: 69103, Best GAP: 0.00144714%, Execution Time: seconds seconds
+n60E - Best Penalty: 59138, Best GAP: 0.344447%, Execution Time: seconds seconds
+n60F - Best Penalty: 93496, Best GAP: 0.484712%, Execution Time: seconds seconds
+n60G - Best Penalty: 71118, Best GAP: 10.0353%, Execution Time: seconds seconds
+n60H - Best Penalty: 146143, Best GAP: 0.78341%, Execution Time: seconds seconds
+n60I - Best Penalty: 44659, Best GAP: 3.17193%, Execution Time: seconds seconds
