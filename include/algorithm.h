@@ -8,7 +8,7 @@
 
 // Constants
 constexpr double IMPROVEMENT_THRESHOLD = 1.0;
-constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 6000;
+constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 100;
 constexpr int PERTURBATION_STRENGTH_MIN = 1;
 constexpr int PERTURBATION_STRENGTH_MAX = 57;
 
