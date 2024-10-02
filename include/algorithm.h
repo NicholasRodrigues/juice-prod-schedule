@@ -7,11 +7,11 @@
 #include "order.h"
 
 // Constants
-constexpr double IMPROVEMENT_THRESHOLD = 1e-6;
-constexpr int MAX_ILS_ITERATIONS = 1000;
-constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 50;
+constexpr double IMPROVEMENT_THRESHOLD = 1.0;
+constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 6000;
 constexpr int PERTURBATION_STRENGTH_MIN = 1;
-constexpr int PERTURBATION_STRENGTH_MAX = 5;
+constexpr int PERTURBATION_STRENGTH_MAX = 57;
+
 
 // Function declarations
 double calculateTotalPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
@@ -34,7 +34,7 @@ void adaptiveShuffle(
     std::vector<double>& neighborhoodWeights,
     std::mt19937& g);
 
-void perturbSolution(std::vector<int>& schedule);
+void perturbSolution(std::vector<int>& schedule, int perturbationStrength);
 
 std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<Order>& orders,
                      const std::vector<std::vector<int>>& setupTimes,
