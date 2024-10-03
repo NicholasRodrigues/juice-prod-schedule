@@ -1,0 +1,14 @@
+n60A - Penalty: , GAP: %, Execution Time:  seconds
+n60B - Penalty: , GAP: %, Execution Time:  seconds
+n60C - Penalty: , GAP: %, Execution Time:  seconds
+n60D - Penalty: , GAP: %, Execution Time:  seconds
+n60E - Penalty: , GAP: %, Execution Time:  seconds
+n60F - Penalty: , GAP: %, Execution Time:  seconds
+n60G - Penalty: , GAP: %, Execution Time:  seconds
+n60H - Penalty: , GAP: %, Execution Time:  seconds
+n60I - Penalty: , GAP: %, Execution Time:  seconds
+n60J - Penalty: , GAP: %, Execution Time:  seconds
+n60K - Penalty: , GAP: %, Execution Time:  seconds
+n60L - Penalty: , GAP: %, Execution Time:  seconds
+n60M - Penalty: , GAP: %, Execution Time:  seconds
+n60N - Penalty: , GAP: %, Execution Time:  seconds

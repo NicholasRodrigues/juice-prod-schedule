@@ -1,0 +1,3 @@
+C:/Users/tiago/CPP/APA/juice-prod-schedule/build/CMakeFiles/juice_prod_schedule.dir
+C:/Users/tiago/CPP/APA/juice-prod-schedule/build/CMakeFiles/edit_cache.dir
+C:/Users/tiago/CPP/APA/juice-prod-schedule/build/CMakeFiles/rebuild_cache.dir

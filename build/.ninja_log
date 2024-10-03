@@ -1,0 +1,17 @@
+# ninja log v6
+90	1684	7493405737575960	CMakeFiles/juice_prod_schedule.dir/src/neighborhoods.cpp.obj	3998cf5a14912fc5
+42	747	7496626192293170	build.ninja	af74f99f479c50b3
+6	1851	7493557647357082	CMakeFiles/juice_prod_schedule.dir/src/algorithm.cpp.obj	a33641dc55410a59
+84	1592	7493354539398188	CMakeFiles/juice_prod_schedule.dir/src/parser.cpp.obj	c418dfe127ff0019
+73	5680	7496594356993312	CMakeFiles/juice_prod_schedule.dir/src/main.cpp.obj	e5c1b50f990ff5f9
+5683	6942	7496594413097426	juice_prod_schedule.exe	ffa0a29a2872702e
+61	1515	7496626192293170	build.ninja	af74f99f479c50b3
+40	4384	7496626194247630	CMakeFiles/juice_prod_schedule.dir/src/parser.cpp.obj	79cdd062770186b1
+45	4999	7496626194297574	CMakeFiles/juice_prod_schedule.dir/src/neighborhoods.cpp.obj	ff383d509310cda5
+34	6458	7496626194190915	CMakeFiles/juice_prod_schedule.dir/src/main.cpp.obj	d2ff94ea472e162c
+30	8384	7496626194150943	CMakeFiles/juice_prod_schedule.dir/src/algorithm.cpp.obj	ba55d4a744fdf3ee
+51	578	7496626951173056	juice_prod_schedule.exe	cd9831844ea65855
+19	1962	7496628495292727	CMakeFiles/juice_prod_schedule.dir/src/neighborhoods.cpp.obj	ff383d509310cda5
+13	2926	7496628495233117	CMakeFiles/juice_prod_schedule.dir/src/main.cpp.obj	d2ff94ea472e162c
+7	4181	7496628495169694	CMakeFiles/juice_prod_schedule.dir/src/algorithm.cpp.obj	ba55d4a744fdf3ee
+4181	4462	7496628536908881	juice_prod_schedule.exe	cd9831844ea65855

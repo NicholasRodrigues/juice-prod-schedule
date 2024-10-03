@@ -1,0 +1,26 @@
+[
+{
+  "directory": "C:/Users/tiago/CPP/APA/juice-prod-schedule/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -IC:/Users/tiago/CPP/APA/juice-prod-schedule/include  -O3 -fdata-sections -ffunction-sections -g -o CMakeFiles\\juice_prod_schedule.dir\\src\\algorithm.cpp.obj -c C:\\Users\\tiago\\CPP\\APA\\juice-prod-schedule\\src\\algorithm.cpp",
+  "file": "C:\\Users\\tiago\\CPP\\APA\\juice-prod-schedule\\src\\algorithm.cpp",
+  "output": "CMakeFiles\\juice_prod_schedule.dir\\src\\algorithm.cpp.obj"
+},
+{
+  "directory": "C:/Users/tiago/CPP/APA/juice-prod-schedule/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -IC:/Users/tiago/CPP/APA/juice-prod-schedule/include  -O3 -fdata-sections -ffunction-sections -g -o CMakeFiles\\juice_prod_schedule.dir\\src\\main.cpp.obj -c C:\\Users\\tiago\\CPP\\APA\\juice-prod-schedule\\src\\main.cpp",
+  "file": "C:\\Users\\tiago\\CPP\\APA\\juice-prod-schedule\\src\\main.cpp",
+  "output": "CMakeFiles\\juice_prod_schedule.dir\\src\\main.cpp.obj"
+},
+{
+  "directory": "C:/Users/tiago/CPP/APA/juice-prod-schedule/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -IC:/Users/tiago/CPP/APA/juice-prod-schedule/include  -O3 -fdata-sections -ffunction-sections -g -o CMakeFiles\\juice_prod_schedule.dir\\src\\parser.cpp.obj -c C:\\Users\\tiago\\CPP\\APA\\juice-prod-schedule\\src\\parser.cpp",
+  "file": "C:\\Users\\tiago\\CPP\\APA\\juice-prod-schedule\\src\\parser.cpp",
+  "output": "CMakeFiles\\juice_prod_schedule.dir\\src\\parser.cpp.obj"
+},
+{
+  "directory": "C:/Users/tiago/CPP/APA/juice-prod-schedule/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -IC:/Users/tiago/CPP/APA/juice-prod-schedule/include  -O3 -fdata-sections -ffunction-sections -g -o CMakeFiles\\juice_prod_schedule.dir\\src\\neighborhoods.cpp.obj -c C:\\Users\\tiago\\CPP\\APA\\juice-prod-schedule\\src\\neighborhoods.cpp",
+  "file": "C:\\Users\\tiago\\CPP\\APA\\juice-prod-schedule\\src\\neighborhoods.cpp",
+  "output": "CMakeFiles\\juice_prod_schedule.dir\\src\\neighborhoods.cpp.obj"
+}
+]
