@@ -1,14 +1,17 @@
-n60A - Penalty: , GAP: %, Execution Time:  seconds
-n60B - Penalty: , GAP: %, Execution Time:  seconds
-n60C - Penalty: , GAP: %, Execution Time:  seconds
-n60D - Penalty: , GAP: %, Execution Time:  seconds
-n60E - Penalty: , GAP: %, Execution Time:  seconds
-n60F - Penalty: , GAP: %, Execution Time:  seconds
-n60G - Penalty: , GAP: %, Execution Time:  seconds
-n60H - Penalty: , GAP: %, Execution Time:  seconds
-n60I - Penalty: , GAP: %, Execution Time:  seconds
-n60J - Penalty: , GAP: %, Execution Time:  seconds
-n60K - Penalty: , GAP: %, Execution Time:  seconds
-n60L - Penalty: , GAP: %, Execution Time:  seconds
-n60M - Penalty: , GAP: %, Execution Time:  seconds
-n60N - Penalty: , GAP: %, Execution Time:  seconds
+  Instance   Optimal Cost     GRASP Cost      Optimized Cost    GAP (GRASP)     GAP (Optimized)  Exec Time (s)
+      n60A            453              0                   0           -100                -100        25.2228
+      n60B           1757           1602                 686       -8.82186            -60.9562        44.0782
+      n60C              0              0                   0            nan                 nan        10.5593
+      n60D          69102          69539               65974       0.632398            -4.52664         24.808
+      n60E          58935          53610               52471       -9.03538             -10.968        49.4319
+      n60F          93045         101779               91895        9.38686            -1.23596        39.7408
+      n60G          64632          65945               61740         2.0315            -4.47456        20.3244
+      n60H         145007         149577              134858        3.15157            -6.99897         82.451
+      n60I          43286          47499               37213        9.73294            -14.0299        66.3677
+      n60J          53555          54284               50060        1.36122              -6.526        38.1073
+      n60K         458752         436145              432106       -4.92793            -5.80837        34.7435
+      n60L         332941         326537              306269       -1.92346            -8.01103        60.6394
+      n60M         516926         516484              500741     -0.0855055            -3.13101        55.9097
+      n60N         492572         466905              463576       -5.21081            -5.88665        43.8028
+      n60O         527459         492563              477962       -6.61587            -9.38405        78.7977
+      n60P         396183         361150              351315       -8.84263            -11.3251        53.3803

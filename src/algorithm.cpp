@@ -2,6 +2,8 @@
 #include "neighborhoods.h"
 #include <iostream>
 #include <chrono>
+#include <set>
+#include <numeric>
 
 double calculateTotalPenalty(const std::vector<int> &schedule, const std::vector<Order> &orders,
                              const std::vector<std::vector<int>> &setupTimes,
@@ -94,55 +96,62 @@ std::vector<int> GRASP(const std::vector<Order> &orders,
 
     int maxIterations = GRASP_ITERATIONS;
     std::vector<int> bestSolution = greedyAlgorithm(orders, setupTimes, initialSetupTimes, totalPenaltyCost);
-    std::vector<int> currentSolution = bestSolution;
 
     double bestPenaltyCost = calculateTotalPenalty(bestSolution, orders, setupTimes, initialSetupTimes);
 
+    // Print current best penalty cost
+    std::cout << "Penalty cost before GRASP: " << bestPenaltyCost << std::endl;
+
     int rclSize = RCL_SIZE;
+
+    std::vector<Order> sortedOrders = orders;
+    std::sort(sortedOrders.begin(), sortedOrders.end(), [](const Order &a, const Order &b)
+              { return a.dueTime < b.dueTime; });
 
     for (int i = 0; i < maxIterations; i++)
     {
         std::vector<int> newSchedule;
 
-        // Sort orders based on Earliest Due Date (EDD)
-        std::vector<Order> sortedOrders = orders;
-        std::sort(sortedOrders.begin(), sortedOrders.end(), [](const Order &a, const Order &b)
-                  { return a.dueTime < b.dueTime; });
+        std::vector<Order> ordersPool = sortedOrders;
 
-        double iterationPenaltyCost = 0;
-        int currentTime = 0;
-        int currentTask = -1;
-
-        while (newSchedule.size() < orders.size())
+        while (ordersPool.size() > 0)
         {
             std::vector<Order> bestOrders;
-            for (int j = 0; j < rclSize; j++)
+            int rclSizeLimited = std::min(rclSize, static_cast<int>(ordersPool.size()));
+            for (int j = 0; j < rclSizeLimited; j++)
             {
-                bestOrders.push_back(sortedOrders[j]);
+                bestOrders.push_back(ordersPool[j]);
             }
 
-            // Random select one order from the best orders
+            // Randomly select one order from the best orders
             std::mt19937 rng(std::random_device{}());
             std::uniform_int_distribution<int> distribution(0, bestOrders.size() - 1);
             int index = distribution(rng);
 
             Order selectedOrder = bestOrders[index];
 
-            int setupTime = (currentTask >= 0) ? setupTimes[currentTask][selectedOrder.id] : initialSetupTimes[selectedOrder.id];
-
-            currentTime += setupTime + selectedOrder.processingTime;
-
-            if (currentTime > selectedOrder.dueTime)
-            {
-                double penalty = selectedOrder.penaltyRate * (currentTime - selectedOrder.dueTime);
-                iterationPenaltyCost += penalty;
-            }
-
+            // Add selected order to the new schedule
             newSchedule.push_back(selectedOrder.id);
 
-            // Remove the selected order from the sorted orders
-            sortedOrders.erase(sortedOrders.begin() + index);
+            // Find and remove the selected order from ordersPool
+            auto it = std::find_if(ordersPool.begin(), ordersPool.end(), [&](const Order &o)
+                                   { return o.id == selectedOrder.id; });
+
+            if (it != ordersPool.end())
+            {
+                ordersPool.erase(it);
+            }
         }
+
+        // std::set<int> uniqueElements(bestSolution.begin(), bestSolution.end());
+        // if (uniqueElements.size() != bestSolution.size())
+        // {
+        //     std::cerr << "Error: Best solution contains repeated elements!" << std::endl;
+        // }
+
+        // Apply local search with AdaptiveRVND
+        newSchedule = adaptiveRVND(newSchedule, orders, setupTimes, initialSetupTimes);
+        double iterationPenaltyCost = calculateTotalPenalty(newSchedule, orders, setupTimes, initialSetupTimes);
 
         if (iterationPenaltyCost < bestPenaltyCost)
         {
@@ -152,6 +161,8 @@ std::vector<int> GRASP(const std::vector<Order> &orders,
     }
 
     totalPenaltyCost = bestPenaltyCost;
+
+    std::cout << "Penalty cost after GRASP: " << bestPenaltyCost << std::endl;
 
     return bestSolution;
 }

@@ -20,6 +20,11 @@ double calculateTotalPenalty(const std::vector<int> &schedule, const std::vector
                              const std::vector<std::vector<int>> &setupTimes,
                              const std::vector<int> &initialSetupTimes);
 
+std::vector<int> GRASP(const std::vector<Order> &orders,
+                       const std::vector<std::vector<int>> &setupTimes,
+                       const std::vector<int> &initialSetupTimes,
+                       double &totalPenaltyCost);
+
 std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
                                  const std::vector<std::vector<int>> &setupTimes,
                                  const std::vector<int> &initialSetupTimes,

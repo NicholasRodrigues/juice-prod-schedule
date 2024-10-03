@@ -2,10 +2,22 @@
 #include <vector>
 #include <filesystem>
 #include <unordered_map>
+#include <fstream>
 #include "algorithm.h"
 #include "parser.h"
 
 namespace fs = std::filesystem;
+
+struct Result
+{
+    std::string instanceName;
+    double optimalPenalty;
+    double GRASPPenalty;
+    double optimizedPenalty;
+    double GRASPGAP;
+    double optimizedGAP;
+    double executionTime;
+};
 
 int main(int argc, char *argv[])
 {
@@ -46,59 +58,125 @@ int main(int argc, char *argv[])
         {"n60O", 527459},
         {"n60P", 396183}};
 
-    std::string filename = fs::path(filepath).filename().string();
-    std::string instanceName = filename.substr(0, filename.find('.'));
+    std::vector<Result> results;
 
-    std::cout << "Processing file: " << filepath << std::endl;
-
-    parseInputFile(filepath, orders, setupTimes, initialSetupTimes);
-
-    double totalPenaltyCost = 0.0;
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // Generate initial greedy schedule
-    std::vector<int> initialSchedule = greedyAlgorithm(orders, setupTimes, initialSetupTimes, totalPenaltyCost);
-
-    // Output in a parsable format for the shell script
-    std::cout << "INITIAL_SCHEDULE: ";
-    for (int i : initialSchedule)
+    for (const auto &entry : fs::directory_iterator(filepath))
     {
-        std::cout << i << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "TOTAL_PENALTY_GREEDY: " << totalPenaltyCost << std::endl;
 
-    // Calculate GAP for greedy solution
-    double greedyGAP = 0.0;
-    if (optimalPenalties.find(instanceName) != optimalPenalties.end())
+        std::string filepath = entry.path().string();
+        std::string filename = entry.path().filename().string();
+
+        // Extract instance name (e.g., "n60A" from "n60A.txt")
+        std::string instanceName = filename.substr(0, filename.find('.'));
+
+        std::cout << "Processing file: " << filepath << std::endl;
+
+        std::cout << "Optimal penalty: " << optimalPenalties[instanceName] << std::endl;
+
+        parseInputFile(filepath, orders, setupTimes, initialSetupTimes);
+
+        double totalPenaltyCost = 0.0;
+        auto start = std::chrono::high_resolution_clock::now();
+
+        // Generate initial greedy schedule
+        std::vector<int> initialSchedule = GRASP(orders, setupTimes, initialSetupTimes, totalPenaltyCost);
+
+        // Output in a parsable format for the shell script
+        std::cout << "INITIAL_SCHEDULE: ";
+        for (int i : initialSchedule)
+        {
+            std::cout << i << " ";
+        }
+        std::cout << std::endl;
+        std::cout << "TOTAL_PENALTY_GREEDY: " << totalPenaltyCost << std::endl;
+
+        // Calculate GAP for greedy solution
+        double greedyGAP = 0.0;
+        if (optimalPenalties.find(instanceName) != optimalPenalties.end())
+        {
+            double optimalPenalty = optimalPenalties[instanceName];
+            greedyGAP = ((totalPenaltyCost - optimalPenalty) / optimalPenalty) * 100.0;
+            std::cout << "GAP_GREEDY: " << greedyGAP << "%" << std::endl;
+        }
+
+        // Perform ILS optimization with Adaptive RVND
+        std::vector<int> optimizedSchedule = ILS(initialSchedule, orders, setupTimes, initialSetupTimes);
+
+        // Post-optimization cost calculation
+        double totalPenaltyAfterOptimization = calculateTotalPenalty(optimizedSchedule, orders, setupTimes, initialSetupTimes);
+
+        // Output optimized results
+        std::cout << "OPTIMIZED_SCHEDULE: ";
+        for (int i : optimizedSchedule)
+        {
+            std::cout << i << " ";
+        }
+        std::cout << std::endl;
+        std::cout << "TOTAL_PENALTY_OPTIMIZED: " << totalPenaltyAfterOptimization << std::endl;
+
+        // Calculate GAP for optimized solution
+        double optimizedGAP = ((totalPenaltyAfterOptimization - optimalPenalties[instanceName]) / optimalPenalties[instanceName]) * 100.0;
+        std::cout << "GAP_OPTIMIZED: " << optimizedGAP << "%" << std::endl;
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
+        std::cout << "EXECUTION_TIME: " << elapsed.count() << " seconds" << std::endl;
+
+        results.push_back({instanceName, optimalPenalties[instanceName], totalPenaltyCost, totalPenaltyAfterOptimization, greedyGAP, optimizedGAP, elapsed.count()});
+    }
+
+    // Output results in a table format
+
+    std::cout << std::setw(10) << "Instance"
+              << std::setw(15) << "Optimal Cost"
+              << std::setw(15) << "GRASP Cost"
+              << std::setw(20) << "Optimized Cost"
+              << std::setw(15) << "GAP (GRASP)"
+              << std::setw(20) << "GAP (Optimized)"
+              << std::setw(15) << "Exec Time (s)"
+              << std::endl;
+
+    for (const auto &result : results)
     {
-        double optimalPenalty = optimalPenalties[instanceName];
-        greedyGAP = ((totalPenaltyCost - optimalPenalty) / optimalPenalty) * 100.0;
-        std::cout << "GAP_GREEDY: " << greedyGAP << "%" << std::endl;
+        std::cout << std::setw(10) << result.instanceName
+                  << std::setw(15) << result.optimalPenalty
+                  << std::setw(15) << result.GRASPPenalty
+                  << std::setw(20) << result.optimizedPenalty
+                  << std::setw(15) << result.GRASPGAP
+                  << std::setw(20) << result.optimizedGAP
+                  << std::setw(15) << result.executionTime
+                  << std::endl;
     }
 
-    // Perform ILS optimization with Adaptive RVND
-    std::vector<int> optimizedSchedule = ILS(initialSchedule, orders, setupTimes, initialSetupTimes);
+    // Save results to the results/summary.txt file
 
-    // Post-optimization cost calculation
-    double totalPenaltyAfterOptimization = calculateTotalPenalty(optimizedSchedule, orders, setupTimes, initialSetupTimes);
-
-    // Output optimized results
-    std::cout << "OPTIMIZED_SCHEDULE: ";
-    for (int i : optimizedSchedule)
+    std::ofstream file("results/summary.txt");
+    if (file.is_open())
     {
-        std::cout << i << " ";
+        file << std::setw(10) << "Instance"
+             << std::setw(15) << "Optimal Cost"
+             << std::setw(15) << "GRASP Cost"
+             << std::setw(20) << "Optimized Cost"
+             << std::setw(15) << "GAP (GRASP)"
+             << std::setw(20) << "GAP (Optimized)"
+             << std::setw(15) << "Exec Time (s)"
+             << std::endl;
+        for (const auto &result : results)
+        {
+            file << std::setw(10) << result.instanceName
+                 << std::setw(15) << result.optimalPenalty
+                 << std::setw(15) << result.GRASPPenalty
+                 << std::setw(20) << result.optimizedPenalty
+                 << std::setw(15) << result.GRASPGAP
+                 << std::setw(20) << result.optimizedGAP
+                 << std::setw(15) << result.executionTime
+                 << std::endl;
+        }
     }
-    std::cout << std::endl;
-    std::cout << "TOTAL_PENALTY_OPTIMIZED: " << totalPenaltyAfterOptimization << std::endl;
-
-    // Calculate GAP for optimized solution
-    double optimizedGAP = ((totalPenaltyAfterOptimization - optimalPenalties[instanceName]) / optimalPenalties[instanceName]) * 100.0;
-    std::cout << "GAP_OPTIMIZED: " << optimizedGAP << "%" << std::endl;
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "EXECUTION_TIME: " << elapsed.count() << " seconds" << std::endl;
-
+    else
+    {
+        std::cerr << "Error: Unable to open file for writing: summary.txt" << std::endl;
+    }
+    file.close();
     return 0;
 }

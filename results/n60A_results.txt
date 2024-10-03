@@ -1,8 +1,0 @@
-Penalty: 
-GAP: %
-Execution Time:  seconds
-Schedule: 
---------------------------------
-Run #1 - Penalty: , GAP: %, Execution Time:  seconds
-Run #2 - Penalty: , GAP: %, Execution Time:  seconds
-Run #3 - Penalty: , GAP: %, Execution Time:  seconds
