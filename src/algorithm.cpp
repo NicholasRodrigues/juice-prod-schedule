@@ -143,11 +143,11 @@ std::vector<int> GRASP(const std::vector<Order> &orders,
             }
         }
 
-        // std::set<int> uniqueElements(bestSolution.begin(), bestSolution.end());
-        // if (uniqueElements.size() != bestSolution.size())
-        // {
-        //     std::cerr << "Error: Best solution contains repeated elements!" << std::endl;
-        // }
+        std::set<int> uniqueElements(bestSolution.begin(), bestSolution.end());
+        if (uniqueElements.size() != bestSolution.size())
+        {
+            std::cerr << "Error: Best solution contains repeated elements!" << std::endl;
+        }
 
         // Apply local search with AdaptiveRVND
         newSchedule = adaptiveRVND(newSchedule, orders, setupTimes, initialSetupTimes);
