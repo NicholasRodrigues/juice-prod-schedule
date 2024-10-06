@@ -12,9 +12,9 @@
 // Swap Neighborhood Function
 bool swapNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
                       const std::vector<std::vector<int>>& setupTimes,
-                      const std::vector<int>& initialSetupTimes) {
+                      const std::vector<int>& initialSetupTimes, double& currentPenalty) {
     int n = schedule.size();
-    double currentPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
+    // double currentPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
     double bestPenalty = currentPenalty;
     int best_i = -1, best_j = -1;  // Indices of the best swap
     bool improvementFound = false;
@@ -43,6 +43,7 @@ bool swapNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orde
     // Apply the best swap found
     if (improvementFound) {
         std::swap(schedule[best_i], schedule[best_j]);
+        currentPenalty = bestPenalty;
         return true;  // Improvement was made
     }
 
@@ -53,9 +54,9 @@ bool swapNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orde
 // Reinsertion Neighborhood Function (Handles subsequences)
 bool reinsertionNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
                              const std::vector<std::vector<int>>& setupTimes,
-                             const std::vector<int>& initialSetupTimes) {
+                             const std::vector<int>& initialSetupTimes, double& currentPenalty) {
     int n = schedule.size();
-    double currentPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
+    // double currentPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
     double bestPenalty = currentPenalty;
     int best_i = -1, best_j = -1, best_l = -1;  // Indices and length for the best move
     bool improvementFound = false;
@@ -105,6 +106,7 @@ bool reinsertionNeighborhood(std::vector<int>& schedule, const std::vector<Order
 
         // Insert the subsequence at the new position
         schedule.insert(schedule.begin() + insertPos, subsequence.begin(), subsequence.end());
+        currentPenalty = bestPenalty;
         return true;  // Improvement was made
     }
 
@@ -113,9 +115,9 @@ bool reinsertionNeighborhood(std::vector<int>& schedule, const std::vector<Order
 
 bool twoOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
                         const std::vector<std::vector<int>>& setupTimes,
-                        const std::vector<int>& initialSetupTimes) {
+                        const std::vector<int>& initialSetupTimes, double& currentPenalty) {
     int n = schedule.size();
-    double currentPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
+    // double currentPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
     double bestPenalty = currentPenalty;
     int best_i = -1, best_j = -1;  // Indices for the best 2-opt move
     bool improvementFound = false;
@@ -144,6 +146,7 @@ bool twoOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& or
     // Apply the best 2-opt move found
     if (improvementFound) {
         std::reverse(schedule.begin() + best_i, schedule.begin() + best_j + 1);
+        currentPenalty = bestPenalty;
         return true;  // Improvement was made
     }
 

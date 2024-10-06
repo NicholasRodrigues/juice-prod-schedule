@@ -74,10 +74,10 @@ std::vector<int> greedyAlgorithm(const std::vector<Order>& orders,
 
 std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
                               const std::vector<std::vector<int>>& setupTimes,
-                              const std::vector<int>& initialSetupTimes) {
+                              const std::vector<int>& initialSetupTimes, double& currentPenalty) {
     std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
     const std::vector<std::vector<int>>&,
-    const std::vector<int>&)> > neighborhoods = {
+    const std::vector<int>&, double&)> > neighborhoods = {
             reinsertionNeighborhood,
             twoOptNeighborhood,
             swapNeighborhood
@@ -92,7 +92,7 @@ std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Orde
         std::shuffle(neighborhoods.begin(), neighborhoods.end(), rng);
 
         for (size_t i = 0; i < neighborhoods.size(); ++i) {
-            bool neighborhoodImprovement = neighborhoods[i](schedule, orders, setupTimes, initialSetupTimes);
+            bool neighborhoodImprovement = neighborhoods[i](schedule, orders, setupTimes, initialSetupTimes, currentPenalty);
             if (neighborhoodImprovement) {
                 improvement = true;
                 break;
@@ -102,6 +102,7 @@ std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Orde
 
     return schedule;
 }
+
 
 //std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
 //                              const std::vector<std::vector<int>>& setupTimes,
@@ -280,6 +281,7 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<
     double bestPenalty = calculateTotalPenalty(bestSolution, orders, setupTimes, initialSetupTimes);
 
     std::vector<int> currentSolution = bestSolution;
+    double currentPenalty = bestPenalty;  // Track current penalty
     int noImprovementCounter = 0;
     int perturbationStrength = 1;
 
@@ -289,9 +291,7 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<
         iteration++;
 
         // Apply VND
-        currentSolution = adaptiveRVND(currentSolution, orders, setupTimes, initialSetupTimes);
-        double currentPenalty = calculateTotalPenalty(currentSolution, orders, setupTimes, initialSetupTimes);
-
+        currentSolution = adaptiveRVND(currentSolution, orders, setupTimes, initialSetupTimes, currentPenalty);
         std::cout << "Iteration: " << iteration
                   << ", Current Penalty: " << currentPenalty
                   << ", Best Penalty: " << bestPenalty
@@ -311,6 +311,7 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<
 
         // Perturb the current solution
         perturbSolution(currentSolution, perturbationStrength);
+        currentPenalty = calculateTotalPenalty(currentSolution, orders, setupTimes, initialSetupTimes);
     }
 
     return bestSolution;
