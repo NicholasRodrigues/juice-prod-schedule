@@ -1,0 +1,15 @@
+Run #1 - Penalty: 147968, GAP: 2.04197%, Execution Time: seconds seconds
+Best result for n60H: 
+Penalty: 1000000000, GAP: 1000000000%, Execution Time: 1000000000 seconds
+Schedule: 
+--------------------------------
+Run #1 - Penalty: 148225, GAP: 2.2192%, Execution Time: seconds seconds
+Best result for n60H: 
+Penalty: 1000000000, GAP: 1000000000%, Execution Time: 1000000000 seconds
+Schedule: 
+--------------------------------
+Run #1 - Penalty: 147597, GAP: 1.78612%, Execution Time: seconds seconds
+Best result for n60H: 
+Penalty: 1000000000, GAP: 1000000000%, Execution Time: 1000000000 seconds
+Schedule: 
+--------------------------------

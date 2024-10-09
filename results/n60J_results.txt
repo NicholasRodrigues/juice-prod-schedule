@@ -1,0 +1,15 @@
+Run #1 - Penalty: 54990, GAP: 2.67949%, Execution Time: seconds seconds
+Best result for n60J: 
+Penalty: 1000000000, GAP: 1000000000%, Execution Time: 1000000000 seconds
+Schedule: 
+--------------------------------
+Run #1 - Penalty: 54643, GAP: 2.03156%, Execution Time: seconds seconds
+Best result for n60J: 
+Penalty: 1000000000, GAP: 1000000000%, Execution Time: 1000000000 seconds
+Schedule: 
+--------------------------------
+Run #1 - Penalty: 55465, GAP: 3.56643%, Execution Time: seconds seconds
+Best result for n60J: 
+Penalty: 1000000000, GAP: 1000000000%, Execution Time: 1000000000 seconds
+Schedule: 
+--------------------------------
