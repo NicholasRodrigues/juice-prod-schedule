@@ -12,7 +12,7 @@ constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 50;
 constexpr int PERTURBATION_STRENGTH_MIN = 1;
 constexpr int PERTURBATION_STRENGTH_MAX = 50;
 
-constexpr int GRASP_ITERATIONS = 200;
+constexpr int GRASP_ITERATIONS = 150;
 constexpr int RCL_SIZE = 6;
 
 // Function declarations
