@@ -17,4 +17,17 @@ bool twoOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& or
                         const std::vector<std::vector<int>>& setupTimes,
                         const std::vector<int>& initialSetupTimes, double& currentPenalty);
 
+bool blockExchangeNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
+                               const std::vector<std::vector<int>>& setupTimes,
+                               const std::vector<int>& initialSetupTimes, double& currentPenalty);
+
+bool blockShiftNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
+                            const std::vector<std::vector<int>>& setupTimes,
+                            const std::vector<int>& initialSetupTimes, double& currentPenalty);
+
+bool threeOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
+                          const std::vector<std::vector<int>>& setupTimes,
+                          const std::vector<int>& initialSetupTimes, double& currentPenalty);
+
+
 #endif // NEIGHBORHOODS_H

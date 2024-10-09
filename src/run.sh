@@ -22,7 +22,7 @@ for instance in "$DATA_DIR"/*.txt; do
     best_schedule=""
 
     # Run the program 10 times for each instance
-    for i in {1..10}; do
+    for i in {1..1}; do
         echo "Run #$i for $instance_name"
 
         # Run the main program and capture the output

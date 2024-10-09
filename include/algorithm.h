@@ -8,15 +8,31 @@
 
 // Constants
 constexpr double IMPROVEMENT_THRESHOLD = 1.0;
-constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 100;
+constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 6000;
 constexpr int PERTURBATION_STRENGTH_MIN = 1;
 constexpr int PERTURBATION_STRENGTH_MAX = 57;
 
 
+struct pair_hash {
+    template <class T1, class T2>
+    std::size_t operator() (const std::pair<T1, T2>& pair) const {
+        return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+    }
+};
+
 // Function declarations
-double calculateTotalPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
+double calculatePriority(const Order& order, int setupTime);
+
+
+int getSetupTime(int currentTask, int nextTask, const std::vector<std::vector<int>>& setupTimes,
+                 const std::vector<int>& initialSetupTimes);
+bool acceptSolution(double currentPenalty, double newPenalty, double threshold);
+
+double calculateTotalPenalty(const std::vector<int>& schedule,
+                             const std::vector<Order>& orders,
                              const std::vector<std::vector<int>>& setupTimes,
                              const std::vector<int>& initialSetupTimes);
+
 
 std::vector<int> greedyAlgorithm(const std::vector<Order>& orders,
                                  const std::vector<std::vector<int>>& setupTimes,
@@ -25,7 +41,8 @@ std::vector<int> greedyAlgorithm(const std::vector<Order>& orders,
 
 std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
                               const std::vector<std::vector<int>>& setupTimes,
-                              const std::vector<int>& initialSetupTimes);
+                              const std::vector<int>& initialSetupTimes, double& currentPenalty,
+                              double& threshold);
 
 void adaptiveShuffle(
     std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
