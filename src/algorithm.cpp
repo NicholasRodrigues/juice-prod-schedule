@@ -20,7 +20,7 @@ struct TabuEntry {
 };
 
 const int TABU_TENURE = 100;           // Tenure for tabu entries
-const int MAX_TABU_LIST_SIZE = 100000;  // Maximum size of the tabu list
+const int MAX_TABU_LIST_SIZE = 1000;  // Maximum size of the tabu list
 
 std::unordered_set<size_t> tabuSet;  // For O(1) lookup
 std::deque<TabuEntry> tabuQueue;     // To track entry order and tenure
@@ -48,17 +48,23 @@ double calculatePriority(const Order &order, int setupTime)
 //    return (newPenalty < currentPenalty) || (std::exp((currentPenalty - newPenalty) / threshold) > ((double) rand() / RAND_MAX));
 //}
 
-double calculateTotalPenalty(const std::vector<int> &schedule, const std::vector<Order> &orders,
-                             const std::vector<std::vector<int>> &setupTimes,
-                             const std::vector<int> &initialSetupTimes)
+// algorithm.cpp
+// algorithm.cpp
+void calculateTotalPenalty(ScheduleData &scheduleData, const std::vector<Order> &orders,
+                           const std::vector<std::vector<int>> &setupTimes,
+                           const std::vector<int> &initialSetupTimes)
 {
     double totalPenaltyCost = 0.0;
-    int currentTime = 0;
+    long long int currentTime = 0;
     int currentTask = -1;
 
-    for (size_t i = 0; i < schedule.size(); ++i)
+    int n = scheduleData.schedule.size();
+    scheduleData.arrivalTimes.resize(n);
+    scheduleData.penalties.resize(n);
+
+    for (size_t i = 0; i < n; ++i)
     {
-        int taskId = schedule[i];
+        int taskId = scheduleData.schedule[i];
         const Order &order = orders[taskId];
 
         int setupTime = 0;
@@ -70,21 +76,25 @@ double calculateTotalPenalty(const std::vector<int> &schedule, const std::vector
         {
             setupTime = initialSetupTimes[taskId];
         }
-        currentTime += setupTime;
+        currentTime += setupTime + order.processingTime;
 
-        currentTime += order.processingTime;
+        scheduleData.arrivalTimes[i] = currentTime;
 
+        double penalty = 0.0;
         if (currentTime > order.dueTime)
         {
-            double penalty = order.penaltyRate * (currentTime - order.dueTime);
-            totalPenaltyCost += penalty;
+            penalty = order.penaltyRate * (currentTime - order.dueTime);
         }
+        scheduleData.penalties[i] = penalty;
+        totalPenaltyCost += penalty;
 
         currentTask = taskId;
     }
 
-    return totalPenaltyCost;
+    scheduleData.totalPenalty = totalPenaltyCost;
 }
+
+
 
 double calculateMaxPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
                            const std::vector<std::vector<int>>& setupTimes,
@@ -169,6 +179,7 @@ std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
     return schedule;
 }
 
+// algorithm.cpp
 std::vector<int> GRASP(const std::vector<Order>& orders,
                        const std::vector<std::vector<int>>& setupTimes,
                        const std::vector<int>& initialSetupTimes,
@@ -185,9 +196,6 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
     });
 
     std::mt19937 rng(std::random_device{}());
-
-    // Initialize the Tabu List outside the loop to maintain it across GRASP runs
-    TabuList tabuList(MAX_TABU_LIST_SIZE);
 
     for (int iter = 0; iter < maxIterations; ++iter) {
         std::vector<int> newSchedule;
@@ -216,10 +224,13 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
         }
 
         // Compute the penalty cost for the new schedule before ILS
-        double iterationPenaltyCost = calculateTotalPenalty(newSchedule, orders, setupTimes, initialSetupTimes);
+        ScheduleData scheduleData;
+        scheduleData.schedule = newSchedule;
+        calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
+        double iterationPenaltyCost = scheduleData.totalPenalty;
 
-        // Apply local search with ILS, passing the local penalty cost and the Tabu List
-        newSchedule = ILS(newSchedule, orders, setupTimes, initialSetupTimes, iterationPenaltyCost, tabuList);
+        // Apply local search with ILS
+        newSchedule = ILS(newSchedule, orders, setupTimes, initialSetupTimes, iterationPenaltyCost);
 
         // After ILS, iterationPenaltyCost is updated inside ILS
 
@@ -239,7 +250,6 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
 
     return bestSolution;
 }
-
 
 // std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
 //                               const std::vector<std::vector<int>>& setupTimes,
@@ -327,50 +337,46 @@ void adaptiveShuffle(std::vector<std::function<bool(std::vector<int> &, const st
 
 // RVND with adaptive neighborhood selection and dynamic acceptance
 // RVND with tabu search mechanism
-std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
+std::vector<int> adaptiveRVND(ScheduleData &scheduleData, const std::vector<Order>& orders,
                               const std::vector<std::vector<int>>& setupTimes,
-                              const std::vector<int>& initialSetupTimes, double& currentPenalty) {
+                              const std::vector<int>& initialSetupTimes)
+{
     // Define the available neighborhoods
-    std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
+    std::vector<std::function<bool(ScheduleData&, const std::vector<Order>&,
     const std::vector<std::vector<int>>&,
-    const std::vector<int>&, double&)>>
+    const std::vector<int>&)>>
     neighborhoods = {
-            reinsertionNeighborhood,
             swapNeighborhood,
             blockExchangeNeighborhood,
             blockShiftNeighborhood,
-            threeOptNeighborhood
+            twoOptNeighborhood
     };
 
     std::mt19937 rng(std::random_device{}());
     bool improvement = true;
 
-    while (improvement) {
+    while (improvement)
+    {
         improvement = false;
 
         // Shuffle the neighborhoods at each iteration
         std::shuffle(neighborhoods.begin(), neighborhoods.end(), rng);
 
-        for (const auto& neighborhood : neighborhoods) {
-            double previousPenalty = currentPenalty;
-            std::vector<int> tempSchedule = schedule;  // Copy current schedule
+        for (const auto& neighborhood : neighborhoods)
+        {
+            bool neighborhoodImprovement = neighborhood(scheduleData, orders, setupTimes, initialSetupTimes);
 
-            bool neighborhoodImprovement = neighborhood(tempSchedule, orders, setupTimes, initialSetupTimes, currentPenalty);
-
-            if (neighborhoodImprovement) {
+            if (neighborhoodImprovement)
+            {
                 // Accept the move
-                schedule = tempSchedule;
                 improvement = true;
-                break;  // Restart after finding an improvement
-            } else {
-                currentPenalty = previousPenalty;  // Restore penalty
+                break; // Restart after finding an improvement
             }
         }
     }
 
-    return schedule;
+    return scheduleData.schedule;
 }
-
 
 
 
@@ -595,72 +601,54 @@ void perturbSolution(std::vector<int>& schedule, int perturbationStrength){
 //
 //     return bestSolution;
 // }
+// algorithm.cpp
 std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<Order>& orders,
                      const std::vector<std::vector<int>>& setupTimes,
-                     const std::vector<int>& initialSetupTimes, double& currentPenaltyCost,
-                     TabuList& tabuList) {
-    std::vector<int> bestSolution = initialSchedule;
-    double bestPenalty = currentPenaltyCost;
+                     const std::vector<int>& initialSetupTimes, double& currentPenaltyCost)
+{
+    ScheduleData bestScheduleData;
+    bestScheduleData.schedule = initialSchedule;
+    calculateTotalPenalty(bestScheduleData, orders, setupTimes, initialSetupTimes);
+    double bestPenalty = bestScheduleData.totalPenalty;
 
-    std::vector<int> currentSolution = bestSolution;
-    double currentPenalty = bestPenalty;
+    ScheduleData currentScheduleData = bestScheduleData;
     int noImprovementCounter = 0;
     int perturbationStrength = 1;
 
     int iteration = 0;
 
-    while (noImprovementCounter < MAX_NO_IMPROVEMENT_ITERATIONS) {
+    while (noImprovementCounter < MAX_NO_IMPROVEMENT_ITERATIONS)
+    {
         iteration++;
 
         // Perform RVND local search
-        currentSolution = adaptiveRVND(currentSolution, orders, setupTimes, initialSetupTimes, currentPenalty);
-
-        size_t currentHash = computeScheduleHash(currentSolution);
+        adaptiveRVND(currentScheduleData, orders, setupTimes, initialSetupTimes);
 
         std::cout << "Iteration: " << iteration
-                  << ", Current Penalty: " << currentPenalty
+                  << ", Current Penalty: " << currentScheduleData.totalPenalty
                   << ", Best Penalty: " << bestPenalty
                   << ", No Improvement Counter: " << noImprovementCounter << std::endl;
 
-        if (currentPenalty < bestPenalty) {
+        if (currentScheduleData.totalPenalty < bestPenalty)
+        {
             // Improvement found
-            bestSolution = currentSolution;
-            bestPenalty = currentPenalty;
+            bestScheduleData = currentScheduleData;
+            bestPenalty = currentScheduleData.totalPenalty;
             noImprovementCounter = 0;
             perturbationStrength = 1;
-            // Clear the Tabu List when an improving solution is found
-            tabuList.clear();
-        } else if (currentPenalty == bestPenalty) {
-            if (!tabuList.isTabu(currentHash)) {
-                // Not in Tabu List, accept the solution
-                bestSolution = currentSolution;
-                bestPenalty = currentPenalty;
-                noImprovementCounter = 0;
-                perturbationStrength = 1;
-                // Add to Tabu List
-                tabuList.addSolution(currentHash);
-            } else {
-                // Solution is in Tabu List, perturb the solution
-                while (tabuList.isTabu(currentHash) && currentPenalty == bestPenalty) {
-                    // Perturb the current solution
-                    perturbSolution(currentSolution, perturbationStrength);
-                    currentPenalty = calculateTotalPenalty(currentSolution, orders, setupTimes, initialSetupTimes);
-                    currentHash = computeScheduleHash(currentSolution);
-                }
-                perturbationStrength = std::min(perturbationStrength + 1, PERTURBATION_STRENGTH_MAX);
-                continue;
-            }
-        } else {
-            // Worse solution, increase no improvement counter
+        }
+        else
+        {
+            // Worse or equal solution, increase no improvement counter
             noImprovementCounter++;
             perturbationStrength = std::min(perturbationStrength + 1, PERTURBATION_STRENGTH_MAX);
         }
 
         // Perturb the current solution
-        perturbSolution(currentSolution, perturbationStrength);
-        currentPenalty = calculateTotalPenalty(currentSolution, orders, setupTimes, initialSetupTimes);
+        perturbSolution(currentScheduleData.schedule, perturbationStrength);
+        calculateTotalPenalty(currentScheduleData, orders, setupTimes, initialSetupTimes);
     }
 
     currentPenaltyCost = bestPenalty;
-    return bestSolution;
+    return bestScheduleData.schedule;
 }

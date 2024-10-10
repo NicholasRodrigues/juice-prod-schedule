@@ -6,6 +6,7 @@
 #include <random>
 #include "order.h"
 #include "tabu_list.h"
+#include "schedule_data.h"
 
 // Constants
 constexpr double IMPROVEMENT_THRESHOLD = 1.0;
@@ -39,10 +40,9 @@ int getSetupTime(int currentTask, int nextTask, const std::vector<std::vector<in
                  const std::vector<int> &initialSetupTimes);
 bool acceptSolution(double currentPenalty, double newPenalty, double threshold);
 
-double calculateTotalPenalty(const std::vector<int> &schedule,
-                             const std::vector<Order> &orders,
-                             const std::vector<std::vector<int>> &setupTimes,
-                             const std::vector<int> &initialSetupTimes);
+void calculateTotalPenalty(ScheduleData &scheduleData, const std::vector<Order> &orders,
+                           const std::vector<std::vector<int>> &setupTimes,
+                           const std::vector<int> &initialSetupTimes);
 
 double calculateMaxPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
                            const std::vector<std::vector<int>>& setupTimes,
@@ -53,10 +53,9 @@ std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
                                  const std::vector<int> &initialSetupTimes,
                                  double &totalPenaltyCost);
 
-std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
-                              const std::vector<std::vector<int>>& setupTimes,
-                              const std::vector<int>& initialSetupTimes, double& currentPenalty,
-                              TabuList& tabuList, double bestPenalty);
+std::vector<int> adaptiveRVND(ScheduleData &scheduleData, const std::vector<Order> &orders,
+                              const std::vector<std::vector<int>> &setupTimes,
+                              const std::vector<int> &initialSetupTimes);
 
 void adaptiveShuffle(
     std::vector<std::function<bool(std::vector<int> &, const std::vector<Order> &,
@@ -69,6 +68,5 @@ void perturbSolution(std::vector<int> &schedule, int perturbationStrength);
 
 std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<Order>& orders,
                      const std::vector<std::vector<int>>& setupTimes,
-                     const std::vector<int>& initialSetupTimes, double& currentPenaltyCost,
-                     TabuList& tabuList);
+                     const std::vector<int>& initialSetupTimes, double& currentPenaltyCost);
 #endif // ALGORITHM_H
