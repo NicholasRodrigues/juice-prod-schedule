@@ -204,17 +204,6 @@ std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& 
             s = RVND(s, orders, setupTimes); // Intensification (LS)
             double newPenalty = calculateTotalPenalty(s, orders, setupTimes, setupTimes[0]);
 
-            // Print best penalty and schedule after escaping the neighborhood functions
-            std::cout << "=============================================" << std::endl;
-            std::cout << "Exiting neighborhood functions - Iteration: " << i + 1 << std::endl;
-            std::cout << "Current Penalty: " << newPenalty << std::endl;
-            std::cout << "Current Schedule: [";
-            for (size_t j = 0; j < s.size(); ++j) {
-                std::cout << s[j];
-                if (j != s.size() - 1) std::cout << ", ";
-            }
-            std::cout << "]" << std::endl;
-            std::cout << "=============================================" << std::endl;
 
             // Solution comparison with encoded version for O(1) lookup
             std::string encodedSolution = encodeSolution(s);
