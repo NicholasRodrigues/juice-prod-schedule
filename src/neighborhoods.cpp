@@ -61,7 +61,7 @@ bool reinsertionNeighborhood(std::vector<int>& schedule, const std::vector<Order
     bool improvementFound = false;
 
     // Consider subsequences of varying lengths
-    for (int l = 1; l <= std::min(5, n); ++l) {
+    for (int l = 1; l <= std::min(10, n); ++l) {
         for (int i = 0; i <= n - l; ++i) {
             for (int j = 0; j <= n - l; ++j) {
                 if (j >= i && j <= i + l - 1) continue;  // Skip invalid moves
@@ -148,4 +148,77 @@ bool twoOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& or
     }
 
     return false;  // No improvement found
+}
+
+bool blockInsertNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
+                             const std::vector<std::vector<int>>& setupTimes,
+                             const std::vector<int>& initialSetupTimes, int blockSize) {
+    int n = schedule.size();
+    double currentPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
+    double bestPenalty = currentPenalty;
+    int best_i = -1, best_j = -1;  // Indices for the best block move
+    bool improvementFound = false;
+
+    for (int i = 0; i <= n - blockSize; ++i) {
+        for (int j = 0; j <= n - blockSize; ++j) {
+            if (j >= i && j <= i + blockSize - 1) continue;  // Skip invalid moves
+
+            std::vector<int> newSchedule = schedule;
+            std::vector<int> block(newSchedule.begin() + i, newSchedule.begin() + i + blockSize);
+            newSchedule.erase(newSchedule.begin() + i, newSchedule.begin() + i + blockSize);
+
+            int insertPos = (j > i) ? j - blockSize : j;
+            newSchedule.insert(newSchedule.begin() + insertPos, block.begin(), block.end());
+
+            double newPenalty = calculateTotalPenalty(newSchedule, orders, setupTimes, initialSetupTimes);
+
+            if (newPenalty < bestPenalty) {
+                bestPenalty = newPenalty;
+                best_i = i;
+                best_j = insertPos;
+                improvementFound = true;
+            }
+        }
+    }
+
+    // Apply the best block insertion found
+    if (improvementFound) {
+        std::vector<int> block(schedule.begin() + best_i, schedule.begin() + best_i + blockSize);
+        schedule.erase(schedule.begin() + best_i, schedule.begin() + best_i + blockSize);
+        schedule.insert(schedule.begin() + best_j, block.begin(), block.end());
+        return true;
+    }
+
+    return false;
+}
+
+bool blockReverseNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
+                              const std::vector<std::vector<int>>& setupTimes,
+                              const std::vector<int>& initialSetupTimes, int blockSize) {
+    int n = schedule.size();
+    double currentPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
+    double bestPenalty = currentPenalty;
+    int best_i = -1;  // Index for the best block reversal
+    bool improvementFound = false;
+
+    for (int i = 0; i <= n - blockSize; ++i) {
+        std::vector<int> newSchedule = schedule;
+        std::reverse(newSchedule.begin() + i, newSchedule.begin() + i + blockSize);
+
+        double newPenalty = calculateTotalPenalty(newSchedule, orders, setupTimes, initialSetupTimes);
+
+        if (newPenalty < bestPenalty) {
+            bestPenalty = newPenalty;
+            best_i = i;
+            improvementFound = true;
+        }
+    }
+
+    // Apply the best block reversal found
+    if (improvementFound) {
+        std::reverse(schedule.begin() + best_i, schedule.begin() + best_i + blockSize);
+        return true;
+    }
+
+    return false;
 }

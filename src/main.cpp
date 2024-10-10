@@ -2,6 +2,7 @@
 #include <vector>
 #include <filesystem>
 #include <unordered_map>
+#include <chrono>
 #include "algorithm.h"
 #include "parser.h"
 #include <sys/resource.h>
@@ -58,30 +59,38 @@ int main(int argc, char* argv[]) {
 
     parseInputFile(filepath, orders, setupTimes, initialSetupTimes);
 
+    // Initialize the solution encoding matrix 'U' for ILS-RVND
+    initializeMatrixU(orders.size());
+
     double totalPenaltyCost = 0.0;
     auto start = std::chrono::high_resolution_clock::now();
 
-    // Generate initial greedy schedule
-    std::vector<int> initialSchedule = greedyAlgorithm(orders, setupTimes, initialSetupTimes, totalPenaltyCost);
-
-    // Output in a parsable format for the shell script
-    std::cout << "INITIAL_SCHEDULE: ";
-    for (int i : initialSchedule) {
-        std::cout << i << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "TOTAL_PENALTY_GREEDY: " << totalPenaltyCost << std::endl;
-
-    // Calculate GAP for greedy solution
-    double greedyGAP = 0.0;
-    if (optimalPenalties.find(instanceName) != optimalPenalties.end()) {
-        double optimalPenalty = optimalPenalties[instanceName];
-        greedyGAP = ((totalPenaltyCost - optimalPenalty) / optimalPenalty) * 100.0;
-        std::cout << "GAP_GREEDY: " << greedyGAP << "%" << std::endl;
-    }
+//    // Generate initial greedy schedule
+//    std::vector<int> initialSchedule = greedyAlgorithm(orders, setupTimes, initialSetupTimes, totalPenaltyCost);
+//
+//    // Output initial schedule
+//    std::cout << "INITIAL_SCHEDULE: ";
+//    for (int i : initialSchedule) {
+//        std::cout << i << " ";
+//    }
+//    std::cout << std::endl;
+//    std::cout << "TOTAL_PENALTY_GREEDY: " << totalPenaltyCost << std::endl;
+//
+//    // Calculate GAP for greedy solution
+//    double greedyGAP = 0.0;
+//    if (optimalPenalties.find(instanceName) != optimalPenalties.end()) {
+//        double optimalPenalty = optimalPenalties[instanceName];
+//        greedyGAP = ((totalPenaltyCost - optimalPenalty) / optimalPenalty) * 100.0;
+//        std::cout << "GAP_GREEDY: " << greedyGAP << "%" << std::endl;
+//    } else {
+//        std::cerr << "Warning: No optimal penalty found for " << instanceName << std::endl;
+//    }
 
     // Perform ILS optimization with Adaptive RVND
-    std::vector<int> optimizedSchedule = ILS(initialSchedule, orders, setupTimes, initialSetupTimes);
+    int maxIter = 1000;  // Maximum number of iterations for ILS
+    int maxIterLS = 100;  // Maximum number of local search iterations
+
+    std::vector<int> optimizedSchedule = ILS_RVND(maxIter, maxIterLS, orders, setupTimes);
 
     // Post-optimization cost calculation
     double totalPenaltyAfterOptimization = calculateTotalPenalty(optimizedSchedule, orders, setupTimes, initialSetupTimes);
@@ -95,8 +104,12 @@ int main(int argc, char* argv[]) {
     std::cout << "TOTAL_PENALTY_OPTIMIZED: " << totalPenaltyAfterOptimization << std::endl;
 
     // Calculate GAP for optimized solution
-    double optimizedGAP = ((totalPenaltyAfterOptimization - optimalPenalties[instanceName]) / optimalPenalties[instanceName]) * 100.0;
-    std::cout << "GAP_OPTIMIZED: " << optimizedGAP << "%" << std::endl;
+    if (optimalPenalties.find(instanceName) != optimalPenalties.end()) {
+        double optimizedGAP = ((totalPenaltyAfterOptimization - optimalPenalties[instanceName]) / optimalPenalties[instanceName]) * 100.0;
+        std::cout << "GAP_OPTIMIZED: " << optimizedGAP << "%" << std::endl;
+    } else {
+        std::cerr << "Warning: No optimal penalty found for " << instanceName << std::endl;
+    }
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;

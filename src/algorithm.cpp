@@ -2,8 +2,16 @@
 #include "neighborhoods.h"
 #include <iostream>
 #include <chrono>
+#include <unordered_set>
+#include <vector>
+#include <functional>
+#include <algorithm>
+#include <random>
+#include <numeric>
+#include <set>
 
-double calculateTotalPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
+double calculateTotalPenalty(const std::vector<int>& schedule,
+                             const std::vector<Order>& orders,
                              const std::vector<std::vector<int>>& setupTimes,
                              const std::vector<int>& initialSetupTimes) {
     double totalPenaltyCost = 0.0;
@@ -21,7 +29,6 @@ double calculateTotalPenalty(const std::vector<int>& schedule, const std::vector
             setupTime = initialSetupTimes[taskId];
         }
         currentTime += setupTime;
-
         currentTime += order.processingTime;
 
         if (currentTime > order.dueTime) {
@@ -35,52 +42,97 @@ double calculateTotalPenalty(const std::vector<int>& schedule, const std::vector
     return totalPenaltyCost;
 }
 
-// Greedy Algorithm using Earliest Due Date (EDD) heuristic
-std::vector<int> greedyAlgorithm(const std::vector<Order>& orders,
-                                 const std::vector<std::vector<int>>& setupTimes,
-                                 const std::vector<int>& initialSetupTimes,
-                                 double& totalPenaltyCost) {
+
+// Tabu list using solution encoding
+std::unordered_set<std::string> tabuList;
+
+// Symmetric matrix for solution encoding
+std::vector<std::vector<int>> U; // Symmetric matrix
+
+void initializeMatrixU(int n) {
+    U.resize(n, std::vector<int>(n));
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> dist(1, 1'000'000);
+
+    for (int i = 0; i < n; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            U[i][j] = U[j][i] = dist(rng);
+        }
+    }
+}
+
+std::string encodeSolution(const std::vector<int>& schedule) {
+    int g = 0;
+    for (size_t i = 1; i < schedule.size(); ++i) {
+        g += U[schedule[i-1]][schedule[i]];
+    }
+    return std::to_string(g);
+}
+
+// Constructive Heuristic (Randomized Insertion)
+std::vector<int> randomizedInsertionHeuristic(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes) {
     int n = orders.size();
     std::vector<int> schedule;
-    int currentTime = 0;
-    int currentTask = -1;
+    std::vector<bool> scheduled(n, false);
 
-    totalPenaltyCost = 0.0;
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> dist(0, n - 1);
 
-    // Sort orders based on Earliest Due Date (EDD)
-    std::vector<Order> sortedOrders = orders;
-    std::sort(sortedOrders.begin(), sortedOrders.end(), [](const Order& a, const Order& b) {
-        return a.dueTime < b.dueTime;
-    });
+    // Select 10% random jobs
+    int initialJobs = std::max(1, n / 10);
+    for (int i = 0; i < initialJobs; ++i) {
+        int randomJob;
+        do {
+            randomJob = dist(rng);
+        } while (scheduled[randomJob]);
 
-    for (const auto& order : sortedOrders) {
-        int taskId = order.id;
+        schedule.push_back(randomJob);
+        scheduled[randomJob] = true;
+    }
 
-        int setupTime = (currentTask >= 0) ? setupTimes[currentTask][taskId] : initialSetupTimes[taskId];
+    // Complete sequence with insertion heuristic
+    while (schedule.size() < n) {
+        int bestTask = -1;
+        int bestInsertPos = 0;
+        double bestCost = std::numeric_limits<double>::infinity();
 
-        currentTime += setupTime + order.processingTime;
+        for (int unscheduledJob = 0; unscheduledJob < n; ++unscheduledJob) {
+            if (scheduled[unscheduledJob]) continue;
 
-        if (currentTime > order.dueTime) {
-            double penalty = order.penaltyRate * (currentTime - order.dueTime);
-            totalPenaltyCost += penalty;
+            for (size_t pos = 0; pos <= schedule.size(); ++pos) {
+                std::vector<int> tempSchedule = schedule;
+                tempSchedule.insert(tempSchedule.begin() + pos, unscheduledJob);
+
+                double currentCost = calculateTotalPenalty(tempSchedule, orders, setupTimes, setupTimes[0]);
+                if (currentCost < bestCost) {
+                    bestCost = currentCost;
+                    bestTask = unscheduledJob;
+                    bestInsertPos = pos;
+                }
+            }
         }
 
-        schedule.push_back(taskId);
-        currentTask = taskId;
+        schedule.insert(schedule.begin() + bestInsertPos, bestTask);
+        scheduled[bestTask] = true;
     }
 
     return schedule;
 }
 
-std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
-                              const std::vector<std::vector<int>>& setupTimes,
-                              const std::vector<int>& initialSetupTimes) {
+// RVND (Randomized Variable Neighborhood Descent)
+std::vector<int> RVND(std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes) {
     std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
     const std::vector<std::vector<int>>&,
-    const std::vector<int>&)> > neighborhoods = {
+    const std::vector<int>&)>> neighborhoods = {
             reinsertionNeighborhood,
             twoOptNeighborhood,
-            swapNeighborhood
+            swapNeighborhood,
+            [&](std::vector<int>& sched, const std::vector<Order>& ord, const std::vector<std::vector<int>>& setup, const std::vector<int>& initial) {
+                return blockInsertNeighborhood(sched, ord, setup, initial, 2); // Example block size 2
+            },
+            [&](std::vector<int>& sched, const std::vector<Order>& ord, const std::vector<std::vector<int>>& setup, const std::vector<int>& initial) {
+                return blockReverseNeighborhood(sched, ord, setup, initial, 3); // Example block size 3
+            }
     };
 
     bool improvement = true;
@@ -88,12 +140,10 @@ std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Orde
 
     while (improvement) {
         improvement = false;
-
         std::shuffle(neighborhoods.begin(), neighborhoods.end(), rng);
 
-        for (size_t i = 0; i < neighborhoods.size(); ++i) {
-            bool neighborhoodImprovement = neighborhoods[i](schedule, orders, setupTimes, initialSetupTimes);
-            if (neighborhoodImprovement) {
+        for (auto& neighborhood : neighborhoods) {
+            if (neighborhood(schedule, orders, setupTimes, setupTimes[0])) {
                 improvement = true;
                 break;
             }
@@ -103,215 +153,114 @@ std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Orde
     return schedule;
 }
 
-//std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
-//                              const std::vector<std::vector<int>>& setupTimes,
-//                              const std::vector<int>& initialSetupTimes) {
-//    std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
-//            const std::vector<std::vector<int>>&,
-//            const std::vector<int>&)> > neighborhoods = {
-//        reinsertionNeighborhood,
-//        twoOptNeighborhood,
-//        swapNeighborhood
-//    };
-//
-//    std::vector<double> neighborhoodWeights(neighborhoods.size(), 1.0);
-//    std::mt19937 rng(std::random_device{}());
-//
-//    bool improvement = true;
-//    int noImprovementCount = 0;
-//
-//    while (improvement) {
-//        adaptiveShuffle(neighborhoods, neighborhoodWeights, rng);
-//
-//        improvement = false;
-//        for (size_t i = 0; i < neighborhoods.size(); ++i) {
-//            double previousPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
-//            bool neighborhoodImprovement = neighborhoods[i](schedule, orders, setupTimes, initialSetupTimes);
-//
-//            double currentPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
-//
-//            if (neighborhoodImprovement && currentPenalty < previousPenalty - IMPROVEMENT_THRESHOLD) {
-//                improvement = true;
-//                neighborhoodWeights[i] += 1.0;
-//                noImprovementCount = 0;
-//                break;  // Restart with reshuffled neighborhoods
-//            } else {
-//                neighborhoodWeights[i] = std::max(0.1, neighborhoodWeights[i] * 0.9);
-//            }
-//        }
-//
-//        if (!improvement) {
-//            noImprovementCount++;
-//        }
-//    }
-//
-//    return schedule;
-//}
-
-void adaptiveShuffle(std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
-                          const std::vector<std::vector<int>>&,
-                          const std::vector<int>&)> >& neighborhoods,
-                          std::vector<double>& neighborhoodWeights, std::mt19937& g) {
-    if (neighborhoods.empty() || neighborhoodWeights.empty()) {
-        std::cerr << "Error: Neighborhoods or weights are empty!" << std::endl;
-        return;
-    }
-
-    double totalWeight = std::accumulate(neighborhoodWeights.begin(), neighborhoodWeights.end(), 0.0);
-    std::vector<double> probabilities;
-    for (double weight : neighborhoodWeights) {
-        probabilities.push_back(weight / totalWeight);
-    }
-
-    std::discrete_distribution<> dist(probabilities.begin(), probabilities.end());
-
-    std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
-            const std::vector<std::vector<int>>&,
-            const std::vector<int>&)> > shuffledNeighborhoods;
-
-    std::vector<int> indices(neighborhoods.size());
-    std::iota(indices.begin(), indices.end(), 0);
-    std::shuffle(indices.begin(), indices.end(), g);
-
-    for (int idx : indices) {
-        shuffledNeighborhoods.push_back(neighborhoods[idx]);
-    }
-
-    neighborhoods = shuffledNeighborhoods;
-}
-
-// Perturbation function for ILS
-void perturbSolution(std::vector<int>& schedule, int perturbationStrength) {
+// Double-Bridge Perturbation for ILS
+void perturbSolution(std::vector<int>& schedule) {
     int n = schedule.size();
     if (n < 8) return;
 
     std::mt19937 rng(std::random_device{}());
+    int segmentSize = n / 4;
+    std::uniform_int_distribution<int> posDist(1, n - 1);
 
-    std::uniform_int_distribution<int> perturbationChoiceDist(1, 3);  // 1: 2-opt, 2: double bridge, 3: both
-    int perturbationChoice = perturbationChoiceDist(rng);
+    int pos1 = posDist(rng) % (n - 3 * segmentSize);
+    int pos2 = pos1 + segmentSize;
+    int pos3 = pos2 + segmentSize;
+    int pos4 = pos3 + segmentSize;
 
-    if (perturbationChoice == 1 || perturbationChoice == 3) {
-        std::uniform_int_distribution<int> moveCountDist(3, 5);
-        std::uniform_int_distribution<int> blockSizeDist(2, std::min(5, n / 2));
-
-        int numMoves = moveCountDist(rng);
-
-        for (int move = 0; move < numMoves; ++move) {
-            int blockSize = blockSizeDist(rng);
-
-            if (blockSize >= n) continue;
-
-            std::uniform_int_distribution<int> indexDist(0, n - blockSize - 1);
-            int i = indexDist(rng);
-            int j = i + blockSize - 1;
-
-            std::reverse(schedule.begin() + i, schedule.begin() + j + 1);
-        }
+    if (pos4 >= n) {
+        pos1 = 0;
+        pos2 = pos1 + segmentSize;
+        pos3 = pos2 + segmentSize;
+        pos4 = pos3 + segmentSize;
     }
 
-    if (perturbationChoice == 2 || perturbationChoice == 3) {
-        int segmentSize = n / 4;
-        std::uniform_int_distribution<int> posDist(1, n - 1);
+    std::vector<int> part1(schedule.begin() + pos1, schedule.begin() + pos2);
+    std::vector<int> part2(schedule.begin() + pos2, schedule.begin() + pos3);
+    std::vector<int> part3(schedule.begin() + pos3, schedule.begin() + pos4);
 
-        int pos1 = posDist(rng) % (n - 3 * segmentSize);
-        int pos2 = pos1 + segmentSize;
-        int pos3 = pos2 + segmentSize;
-        int pos4 = pos3 + segmentSize;
-
-        if (pos4 >= n) {
-            pos1 = 0;
-            pos2 = pos1 + segmentSize;
-            pos3 = pos2 + segmentSize;
-            pos4 = pos3 + segmentSize;
-        }
-
-        std::vector<int> part1(schedule.begin() + pos1, schedule.begin() + pos2);
-        std::vector<int> part2(schedule.begin() + pos2, schedule.begin() + pos3);
-        std::vector<int> part3(schedule.begin() + pos3, schedule.begin() + pos4);
-
-        schedule.erase(schedule.begin() + pos1, schedule.begin() + pos4);
-
-        schedule.insert(schedule.begin() + pos1, part3.begin(), part3.end());
-        schedule.insert(schedule.begin() + pos1 + part3.size(), part1.begin(), part1.end());
-        schedule.insert(schedule.begin() + pos1 + part3.size() + part1.size(), part2.begin(), part2.end());
-    }
+    schedule.erase(schedule.begin() + pos1, schedule.begin() + pos4);
+    schedule.insert(schedule.begin() + pos1, part3.begin(), part3.end());
+    schedule.insert(schedule.begin() + pos1 + part3.size(), part1.begin(), part1.end());
+    schedule.insert(schedule.begin() + pos1 + part3.size() + part1.size(), part2.begin(), part2.end());
 }
 
+// ILS-RVND Implementation
+// ILS-RVND Implementation with structured output
+// ILS-RVND Implementation with structured output for the best solution
+std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes) {
+    double bestPenalty = std::numeric_limits<double>::infinity();
+    std::vector<int> bestSolution;
+    initializeMatrixU(orders.size());
 
+    for (int i = 0; i < maxIter; ++i) {
+        int iterILS = 0;
 
-//std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<Order>& orders,
-//                     const std::vector<std::vector<int>>& setupTimes,
-//                     const std::vector<int>& initialSetupTimes) {
-//    std::vector<int> bestSolution = initialSchedule;
-//    double bestPenalty = calculateTotalPenalty(bestSolution, orders, setupTimes, initialSetupTimes);
-//
-//    std::vector<int> currentSolution = bestSolution;
-//    int noImprovementCounter = 0;
-//    int perturbationStrength = 1;
-//
-//    while (noImprovementCounter < MAX_NO_IMPROVEMENT_ITERATIONS) {
-//        currentSolution = adaptiveRVND(currentSolution, orders, setupTimes, initialSetupTimes);
-//        double currentPenalty = calculateTotalPenalty(currentSolution, orders, setupTimes, initialSetupTimes);
-//
-//        if (currentPenalty < bestPenalty - IMPROVEMENT_THRESHOLD) {
-//            // Improvement found
-//            bestSolution = currentSolution;
-//            bestPenalty = currentPenalty;
-//            noImprovementCounter = 0;
-//            perturbationStrength = 1;  // Reset perturbation strength
-//        } else {
-//            // No improvement
-//            noImprovementCounter++;
-//            perturbationStrength = std::min(perturbationStrength + 1, PERTURBATION_STRENGTH_MAX);
-//        }
-//
-//        // Perturb the current solution
-//        perturbSolution(currentSolution, perturbationStrength);
-//    }
-//
-//    return bestSolution;
-//}
+        // Initial Solution
+        std::vector<int> s = randomizedInsertionHeuristic(orders, setupTimes);
+        double currentPenalty = calculateTotalPenalty(s, orders, setupTimes, setupTimes[0]);
 
+        while (iterILS < maxIterLS) {
+            perturbSolution(s); // Diversification (Perturb)
+            s = RVND(s, orders, setupTimes); // Intensification (LS)
+            double newPenalty = calculateTotalPenalty(s, orders, setupTimes, setupTimes[0]);
 
-std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<Order>& orders,
-                     const std::vector<std::vector<int>>& setupTimes,
-                     const std::vector<int>& initialSetupTimes) {
-    std::vector<int> bestSolution = initialSchedule;
-    double bestPenalty = calculateTotalPenalty(bestSolution, orders, setupTimes, initialSetupTimes);
+            // Print best penalty and schedule after escaping the neighborhood functions
+            std::cout << "=============================================" << std::endl;
+            std::cout << "Exiting neighborhood functions - Iteration: " << i + 1 << std::endl;
+            std::cout << "Current Penalty: " << newPenalty << std::endl;
+            std::cout << "Current Schedule: [";
+            for (size_t j = 0; j < s.size(); ++j) {
+                std::cout << s[j];
+                if (j != s.size() - 1) std::cout << ", ";
+            }
+            std::cout << "]" << std::endl;
+            std::cout << "=============================================" << std::endl;
 
-    std::vector<int> currentSolution = bestSolution;
-    int noImprovementCounter = 0;
-    int perturbationStrength = 1;
+            // Solution comparison with encoded version for O(1) lookup
+            std::string encodedSolution = encodeSolution(s);
+            if (tabuList.find(encodedSolution) != tabuList.end()) {
+                perturbSolution(s);
+                continue;
+            }
+            tabuList.insert(encodedSolution);
 
-    int iteration = 0;
-
-    while (noImprovementCounter < MAX_NO_IMPROVEMENT_ITERATIONS) {
-        iteration++;
-
-        // Apply VND
-        currentSolution = adaptiveRVND(currentSolution, orders, setupTimes, initialSetupTimes);
-        double currentPenalty = calculateTotalPenalty(currentSolution, orders, setupTimes, initialSetupTimes);
-
-        std::cout << "Iteration: " << iteration
-                  << ", Current Penalty: " << currentPenalty
-                  << ", Best Penalty: " << bestPenalty
-                  << ", No Improvement Counter: " << noImprovementCounter << std::endl;
-
-        if (currentPenalty + IMPROVEMENT_THRESHOLD < bestPenalty) {
-            // Improvement found
-            bestSolution = currentSolution;
-            bestPenalty = currentPenalty;
-            noImprovementCounter = 0;
-            perturbationStrength = 1;  // Reset perturbation strength
-        } else {
-            // No significant improvement
-            noImprovementCounter++;
-            perturbationStrength = std::min(perturbationStrength + 1, PERTURBATION_STRENGTH_MAX);
+            if (newPenalty < currentPenalty) {
+                currentPenalty = newPenalty;
+                iterILS = 0; // Reset ILS iteration counter
+            } else {
+                iterILS++;
+            }
         }
 
-        // Perturb the current solution
-        perturbSolution(currentSolution, perturbationStrength);
+        // Update best solution if improved
+        if (currentPenalty < bestPenalty) {
+            bestPenalty = currentPenalty;
+            bestSolution = s;
+
+            // Structured output: Best solution update
+            std::cout << "=============================================" << std::endl;
+            std::cout << "ILS iteration " << i + 1 << ": Best solution updated" << std::endl;
+            std::cout << "Best Penalty: " << bestPenalty << std::endl;
+            std::cout << "Best Schedule: [";
+            for (size_t j = 0; j < bestSolution.size(); ++j) {
+                std::cout << bestSolution[j];
+                if (j != bestSolution.size() - 1) std::cout << ", ";
+            }
+            std::cout << "]" << std::endl;
+            std::cout << "=============================================" << std::endl;
+        }
     }
+
+    // Final print of the best solution
+    std::cout << "Final Best Solution After All Iterations: " << std::endl;
+    std::cout << "Best Penalty: " << bestPenalty << std::endl;
+    std::cout << "Best Schedule: [";
+    for (size_t j = 0; j < bestSolution.size(); ++j) {
+        std::cout << bestSolution[j];
+        if (j != bestSolution.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
 
     return bestSolution;
 }
+
