@@ -18,3 +18,17 @@ Best result for n60A:
 Penalty: 1000000000, GAP: 1000000000%, Execution Time: 1000000000 seconds
 Schedule: 
 --------------------------------
+Run #1 - Penalty: 471, GAP: 3.97351%, Execution Time: 455.055 seconds
+Run #2 - Penalty: 480, GAP: 5.96026%, Execution Time: 1084.14 seconds
+Run #3 - Penalty: 519, GAP: 14.5695%, Execution Time: 455.416 seconds
+Run #4 - Penalty: 522, GAP: 15.2318%, Execution Time: 474.316 seconds
+Run #5 - Penalty: 519, GAP: 14.5695%, Execution Time: 385.698 seconds
+Run #6 - Penalty: 513, GAP: 13.245%, Execution Time: 369.331 seconds
+Run #7 - Penalty: 519, GAP: 14.5695%, Execution Time: 358.079 seconds
+Run #8 - Penalty: 525, GAP: 15.894%, Execution Time: 411.643 seconds
+Run #9 - Penalty: 510, GAP: 12.5828%, Execution Time: 443.351 seconds
+Run #10 - Penalty: 516, GAP: 13.9073%, Execution Time: 378.244 seconds
+Best result for n60A: 
+Penalty: 471, GAP: 3.97351%, Execution Time: 455.055 seconds
+Schedule: 14 58 7 5 47 8 23 12 37 39 11 17 31 43 25 1 10 35 38 6 4 49 20 28 56 44 26 36 21 50 48 52 59 24 9 18 51 2 3 42 32 0 53 29 30 34 46 57 45 55 13 41 27 19 16 54 15 40 33 
+--------------------------------

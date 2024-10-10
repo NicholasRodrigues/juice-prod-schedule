@@ -5,15 +5,18 @@
 #include <functional>
 #include <random>
 #include "order.h"
+#include "tabu_list.h"
 
 // Constants
 constexpr double IMPROVEMENT_THRESHOLD = 1.0;
-constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 600;
+constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 240;
 constexpr int PERTURBATION_STRENGTH_MIN = 1;
 constexpr int PERTURBATION_STRENGTH_MAX = 57;
 
-constexpr int GRASP_ITERATIONS = 200;
+constexpr int GRASP_ITERATIONS = 20;
 constexpr int RCL_SIZE = 15;
+
+size_t computeScheduleHash(const std::vector<int>& schedule);
 
 std::vector<int> GRASP(const std::vector<Order> &orders,
                        const std::vector<std::vector<int>> &setupTimes,
@@ -41,14 +44,19 @@ double calculateTotalPenalty(const std::vector<int> &schedule,
                              const std::vector<std::vector<int>> &setupTimes,
                              const std::vector<int> &initialSetupTimes);
 
+double calculateMaxPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
+                           const std::vector<std::vector<int>>& setupTimes,
+                           const std::vector<int>& initialSetupTimes);
+
 std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
                                  const std::vector<std::vector<int>> &setupTimes,
                                  const std::vector<int> &initialSetupTimes,
                                  double &totalPenaltyCost);
 
-std::vector<int> adaptiveRVND(std::vector<int> &schedule, const std::vector<Order> &orders,
-                              const std::vector<std::vector<int>> &setupTimes,
-                              const std::vector<int> &initialSetupTimes, double &currentPenalty);
+std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
+                              const std::vector<std::vector<int>>& setupTimes,
+                              const std::vector<int>& initialSetupTimes, double& currentPenalty,
+                              TabuList& tabuList, double bestPenalty);
 
 void adaptiveShuffle(
     std::vector<std::function<bool(std::vector<int> &, const std::vector<Order> &,
@@ -59,8 +67,8 @@ void adaptiveShuffle(
 
 void perturbSolution(std::vector<int> &schedule, int perturbationStrength);
 
-std::vector<int> ILS(const std::vector<int> &initialSchedule, const std::vector<Order> &orders,
-                     const std::vector<std::vector<int>> &setupTimes,
-                     const std::vector<int> &initialSetupTimes);
-
+std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<Order>& orders,
+                     const std::vector<std::vector<int>>& setupTimes,
+                     const std::vector<int>& initialSetupTimes, double& currentPenaltyCost,
+                     TabuList& tabuList);
 #endif // ALGORITHM_H

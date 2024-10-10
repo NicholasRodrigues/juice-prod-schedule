@@ -8,6 +8,34 @@
 #include <random>
 #include <functional>
 #include <set>
+#include <unordered_set>
+#include <deque>
+#include <queue>
+#include "tabu_list.h"
+
+// Tabu Entry structure
+struct TabuEntry {
+    size_t solutionHash;
+    int tenure;
+};
+
+const int TABU_TENURE = 100;           // Tenure for tabu entries
+const int MAX_TABU_LIST_SIZE = 100000;  // Maximum size of the tabu list
+
+std::unordered_set<size_t> tabuSet;  // For O(1) lookup
+std::deque<TabuEntry> tabuQueue;     // To track entry order and tenure
+
+
+
+size_t computeScheduleHash(const std::vector<int>& schedule) {
+    std::hash<int> intHasher;
+    size_t seed = 0;
+    for (int job : schedule) {
+        seed ^= intHasher(job) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+    return seed;
+}
+
 
 double calculatePriority(const Order &order, int setupTime)
 {
@@ -57,6 +85,34 @@ double calculateTotalPenalty(const std::vector<int> &schedule, const std::vector
 
     return totalPenaltyCost;
 }
+
+double calculateMaxPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
+                           const std::vector<std::vector<int>>& setupTimes,
+                           const std::vector<int>& initialSetupTimes) {
+    double maxPenalty = 0.0;
+    int currentTime = 0;
+    int currentTask = -1;
+
+    for (size_t i = 0; i < schedule.size(); ++i) {
+        int taskId = schedule[i];
+        const Order& order = orders[taskId];
+
+        int setupTime = (currentTask >= 0) ? setupTimes[currentTask][taskId] : initialSetupTimes[taskId];
+        currentTime += setupTime + order.processingTime;
+
+        if (currentTime > order.dueTime) {
+            double penalty = order.penaltyRate * (currentTime - order.dueTime);
+            if (penalty > maxPenalty) {
+                maxPenalty = penalty;
+            }
+        }
+
+        currentTask = taskId;
+    }
+
+    return maxPenalty;
+}
+
 
 // New greedy algorithm considering both due date, penalty rate, and setup time (dynamic)
 std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
@@ -113,85 +169,66 @@ std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
     return schedule;
 }
 
-std::vector<int> GRASP(const std::vector<Order> &orders,
-                       const std::vector<std::vector<int>> &setupTimes,
-                       const std::vector<int> &initialSetupTimes,
-                       double &totalPenaltyCost)
-{
-
-    // Steps:
-    // 1. Generate a random greedy solution
-    // 2. Use local search with AdaptiveRVND
-    // 3. Repeat steps 1 and 2 until stopping criteria is met
-    // 4. Save the best solution
-
+std::vector<int> GRASP(const std::vector<Order>& orders,
+                       const std::vector<std::vector<int>>& setupTimes,
+                       const std::vector<int>& initialSetupTimes,
+                       double& totalPenaltyCost) {
     int maxIterations = GRASP_ITERATIONS;
-    std::vector<int> bestSolution = greedyAlgorithm(orders, setupTimes, initialSetupTimes, totalPenaltyCost);
-
-    double bestPenaltyCost = calculateTotalPenalty(bestSolution, orders, setupTimes, initialSetupTimes);
-
-    // Print current best penalty cost
-    std::cout << "Penalty cost before GRASP: " << bestPenaltyCost << std::endl;
+    std::vector<int> bestSolution;
+    double bestPenaltyCost = std::numeric_limits<double>::infinity();
 
     int rclSize = RCL_SIZE;
 
     std::vector<Order> sortedOrders = orders;
-    std::sort(sortedOrders.begin(), sortedOrders.end(), [](const Order &a, const Order &b)
-              { return a.dueTime < b.dueTime; }); // O(n log n) time complexity using Introsort algorithm (a hybrid sorting algorithm derived from both Quicksort and Heapsort)
+    std::sort(sortedOrders.begin(), sortedOrders.end(), [](const Order& a, const Order& b) {
+        return a.dueTime < b.dueTime;
+    });
 
-    for (int i = 0; i < maxIterations; i++)
-    {
+    std::mt19937 rng(std::random_device{}());
+
+    // Initialize the Tabu List outside the loop to maintain it across GRASP runs
+    TabuList tabuList(MAX_TABU_LIST_SIZE);
+
+    for (int iter = 0; iter < maxIterations; ++iter) {
         std::vector<int> newSchedule;
+        int n = sortedOrders.size();
 
-        std::vector<Order> ordersPool = sortedOrders;
+        // Initialize ordersPoolIndices with indices to sortedOrders
+        std::vector<int> ordersPoolIndices(n);
+        std::iota(ordersPoolIndices.begin(), ordersPoolIndices.end(), 0);
 
-        while (ordersPool.size() > 0)
-        {
-            std::vector<Order> bestOrders;
-            int rclSizeLimited = std::min(rclSize, static_cast<int>(ordersPool.size()));
-            for (int j = 0; j < rclSizeLimited; j++)
-            {
-                bestOrders.push_back(ordersPool[j]);
-            }
+        while (!ordersPoolIndices.empty()) {
+            int rclSizeLimited = std::min(rclSize, static_cast<int>(ordersPoolIndices.size()));
 
-            // Randomly select one order from the best orders
-            std::mt19937 rng(std::random_device{}());
-            std::uniform_int_distribution<int> distribution(0, bestOrders.size() - 1);
-            int index = distribution(rng);
+            // Randomly select an index from the first rclSizeLimited indices
+            std::uniform_int_distribution<int> distribution(0, rclSizeLimited - 1);
+            int rclIndex = distribution(rng);
+            int selectedIndex = ordersPoolIndices[rclIndex];
 
-            Order selectedOrder = bestOrders[index];
+            const Order& selectedOrder = sortedOrders[selectedIndex];
 
             // Add selected order to the new schedule
             newSchedule.push_back(selectedOrder.id);
 
-            // Find and remove the selected order from ordersPool
-            auto it = std::find_if(ordersPool.begin(), ordersPool.end(), [&](const Order &o)
-                                   { return o.id == selectedOrder.id; });
-
-            if (it != ordersPool.end())
-            {
-                ordersPool.erase(it);
-            }
+            // Remove selectedIndex from ordersPoolIndices
+            std::swap(ordersPoolIndices[rclIndex], ordersPoolIndices.back());
+            ordersPoolIndices.pop_back();
         }
 
-        std::set<int> uniqueElements(bestSolution.begin(), bestSolution.end());
-        if (uniqueElements.size() != bestSolution.size())
-        {
-            std::cerr << "Error: Best solution contains repeated elements!" << std::endl;
-        }
-
-        // Apply local search with AdaptiveRVND
-        newSchedule = adaptiveRVND(newSchedule, orders, setupTimes, initialSetupTimes, totalPenaltyCost);
+        // Compute the penalty cost for the new schedule before ILS
         double iterationPenaltyCost = calculateTotalPenalty(newSchedule, orders, setupTimes, initialSetupTimes);
 
-        if (iterationPenaltyCost < bestPenaltyCost)
-        {
+        // Apply local search with ILS, passing the local penalty cost and the Tabu List
+        newSchedule = ILS(newSchedule, orders, setupTimes, initialSetupTimes, iterationPenaltyCost, tabuList);
+
+        // After ILS, iterationPenaltyCost is updated inside ILS
+
+        if (iterationPenaltyCost < bestPenaltyCost) {
             bestSolution = newSchedule;
             bestPenaltyCost = iterationPenaltyCost;
         }
 
-        if (iterationPenaltyCost == 0)
-        {
+        if (bestPenaltyCost == 0) {
             break;
         }
     }
@@ -202,6 +239,7 @@ std::vector<int> GRASP(const std::vector<Order> &orders,
 
     return bestSolution;
 }
+
 
 // std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
 //                               const std::vector<std::vector<int>>& setupTimes,
@@ -288,49 +326,53 @@ void adaptiveShuffle(std::vector<std::function<bool(std::vector<int> &, const st
 }
 
 // RVND with adaptive neighborhood selection and dynamic acceptance
-std::vector<int> adaptiveRVND(std::vector<int> &schedule, const std::vector<Order> &orders,
-                              const std::vector<std::vector<int>> &setupTimes,
-                              const std::vector<int> &initialSetupTimes, double &currentPenalty)
-{
+// RVND with tabu search mechanism
+std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
+                              const std::vector<std::vector<int>>& setupTimes,
+                              const std::vector<int>& initialSetupTimes, double& currentPenalty) {
     // Define the available neighborhoods
-    std::vector<std::function<bool(std::vector<int> &, const std::vector<Order> &,
-                                   const std::vector<std::vector<int>> &,
-                                   const std::vector<int> &, double &)>>
-        neighborhoods = {
+    std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
+    const std::vector<std::vector<int>>&,
+    const std::vector<int>&, double&)>>
+    neighborhoods = {
             reinsertionNeighborhood,
-            twoOptNeighborhood,
             swapNeighborhood,
             blockExchangeNeighborhood,
             blockShiftNeighborhood,
-            threeOptNeighborhood};
+            threeOptNeighborhood
+    };
 
-    // Random number generator for shuffling neighborhoods
     std::mt19937 rng(std::random_device{}());
-
     bool improvement = true;
 
-    while (improvement)
-    {
+    while (improvement) {
         improvement = false;
 
-        // Randomly shuffle the neighborhoods at each iteration
+        // Shuffle the neighborhoods at each iteration
         std::shuffle(neighborhoods.begin(), neighborhoods.end(), rng);
 
-        for (const auto &neighborhood : neighborhoods)
-        {
+        for (const auto& neighborhood : neighborhoods) {
             double previousPenalty = currentPenalty;
-            bool neighborhoodImprovement = neighborhood(schedule, orders, setupTimes, initialSetupTimes, currentPenalty);
+            std::vector<int> tempSchedule = schedule;  // Copy current schedule
 
-            if (neighborhoodImprovement && currentPenalty < previousPenalty - IMPROVEMENT_THRESHOLD)
-            {
+            bool neighborhoodImprovement = neighborhood(tempSchedule, orders, setupTimes, initialSetupTimes, currentPenalty);
+
+            if (neighborhoodImprovement) {
+                // Accept the move
+                schedule = tempSchedule;
                 improvement = true;
-                break; // Restart after finding an improvement
+                break;  // Restart after finding an improvement
+            } else {
+                currentPenalty = previousPenalty;  // Restore penalty
             }
         }
     }
 
     return schedule;
 }
+
+
+
 
 //// Perturbation function for ILS
 // void perturbSolution(std::vector<int>& schedule, int perturbationStrength) {
@@ -390,95 +432,136 @@ std::vector<int> adaptiveRVND(std::vector<int> &schedule, const std::vector<Orde
 // }
 
 // Perturbation function using 2-opt, double bridge, and shuffling
-void perturbSolution(std::vector<int> &schedule, int perturbationStrength)
-{
+//void perturbSolution(std::vector<int> &schedule, int perturbationStrength)
+//{
+//    int n = schedule.size();
+//    if (n < 8)
+//        return; // Ensure there are enough jobs to perform significant perturbations
+//
+//    std::mt19937 rng(std::random_device{}());
+//
+//    // Randomly choose the perturbation type (1: 2-opt, 2: double bridge, 3: shuffling)
+//    std::uniform_int_distribution<int> perturbationChoiceDist(1, 3);
+////    int perturbationChoice = perturbationChoiceDist(rng);
+//    int perturbationChoice = 3;
+//
+//    // Apply 2-opt move (intensification)
+//    if (perturbationChoice == 1 || perturbationChoice == 2)
+//    {
+//        std::uniform_int_distribution<int> moveCountDist(3, 5);                  // Number of times to perform 2-opt moves
+//        std::uniform_int_distribution<int> blockSizeDist(2, std::min(5, n / 2)); // Size of the block to reverse
+//
+//        int numMoves = moveCountDist(rng);
+//
+//        for (int move = 0; move < numMoves; ++move)
+//        {
+//            int blockSize = blockSizeDist(rng);
+//
+//            if (blockSize >= n)
+//                continue;
+//
+//            std::uniform_int_distribution<int> indexDist(0, n - blockSize - 1);
+//            int i = indexDist(rng);
+//            int j = i + blockSize - 1;
+//
+//            // Reverse the block between i and j
+//            std::reverse(schedule.begin() + i, schedule.begin() + j + 1);
+//        }
+//    }
+//
+//    // Apply Double Bridge move (diversification)
+//    if (perturbationChoice == 2 || perturbationChoice == 3)
+//    {
+//        int segmentSize = n / 4;
+//        if (segmentSize < 2)
+//            return;
+//
+//        // Choose four segments for the double bridge move
+//        std::uniform_int_distribution<int> posDist(1, n - 1);
+//        int pos1 = posDist(rng) % (n - 3 * segmentSize);
+//        int pos2 = pos1 + segmentSize;
+//        int pos3 = pos2 + segmentSize;
+//        int pos4 = pos3 + segmentSize;
+//
+//        // Adjust if boundaries are exceeded
+//        if (pos4 >= n)
+//        {
+//            pos1 = 0;
+//            pos2 = pos1 + segmentSize;
+//            pos3 = pos2 + segmentSize;
+//            pos4 = pos3 + segmentSize;
+//        }
+//
+//        // Extract the four segments
+//        std::vector<int> part1(schedule.begin() + pos1, schedule.begin() + pos2);
+//        std::vector<int> part2(schedule.begin() + pos2, schedule.begin() + pos3);
+//        std::vector<int> part3(schedule.begin() + pos3, schedule.begin() + pos4);
+//
+//        // Remove the four segments from the schedule
+//        schedule.erase(schedule.begin() + pos1, schedule.begin() + pos4);
+//
+//        // Reinsert the segments in a new order: part3, part1, part2
+//        schedule.insert(schedule.begin() + pos1, part3.begin(), part3.end());
+//        schedule.insert(schedule.begin() + pos1 + part3.size(), part1.begin(), part1.end());
+//        schedule.insert(schedule.begin() + pos1 + part3.size() + part1.size(), part2.begin(), part2.end());
+//    }
+//
+//    // Additional random shuffling of a block (further diversification)
+//    if (perturbationChoice == 3)
+//    {
+//        std::uniform_int_distribution<int> blockSizeDist(3, std::min(7, n / 3));
+//        int blockSize = blockSizeDist(rng);
+//
+//        if (blockSize < n)
+//        {
+//            std::uniform_int_distribution<int> startIndexDist(0, n - blockSize - 1);
+//            int startIdx = startIndexDist(rng);
+//
+//            // Shuffle the block of jobs
+//            std::shuffle(schedule.begin() + startIdx, schedule.begin() + startIdx + blockSize, rng);
+//        }
+//    }
+//}
+
+void perturbSolution(std::vector<int>& schedule, int perturbationStrength){
     int n = schedule.size();
-    if (n < 8)
-        return; // Ensure there are enough jobs to perform significant perturbations
+    if (n < 8) return; // Ensure there are enough jobs to perform significant perturbations
 
     std::mt19937 rng(std::random_device{}());
 
-    // Randomly choose the perturbation type (1: 2-opt, 2: double bridge, 3: shuffling)
-    std::uniform_int_distribution<int> perturbationChoiceDist(1, 3);
-    int perturbationChoice = perturbationChoiceDist(rng);
-
-    // Apply 2-opt move (intensification)
-    if (perturbationChoice == 1 || perturbationChoice == 3)
-    {
-        std::uniform_int_distribution<int> moveCountDist(3, 5);                  // Number of times to perform 2-opt moves
-        std::uniform_int_distribution<int> blockSizeDist(2, std::min(5, n / 2)); // Size of the block to reverse
-
-        int numMoves = moveCountDist(rng);
-
-        for (int move = 0; move < numMoves; ++move)
-        {
-            int blockSize = blockSizeDist(rng);
-
-            if (blockSize >= n)
-                continue;
-
-            std::uniform_int_distribution<int> indexDist(0, n - blockSize - 1);
-            int i = indexDist(rng);
-            int j = i + blockSize - 1;
-
-            // Reverse the block between i and j
-            std::reverse(schedule.begin() + i, schedule.begin() + j + 1);
-        }
-    }
-
     // Apply Double Bridge move (diversification)
-    if (perturbationChoice == 2 || perturbationChoice == 3)
-    {
-        int segmentSize = n / 4;
-        if (segmentSize < 2)
-            return;
+    int segmentSize = n / 4;
+    if (segmentSize < 2) segmentSize = 2; // Ensure minimum segment size of 2
 
-        // Choose four segments for the double bridge move
-        std::uniform_int_distribution<int> posDist(1, n - 1);
-        int pos1 = posDist(rng) % (n - 3 * segmentSize);
-        int pos2 = pos1 + segmentSize;
-        int pos3 = pos2 + segmentSize;
-        int pos4 = pos3 + segmentSize;
+    // Choose positions for the four segments
+    std::uniform_int_distribution<int> posDist(1, n - 3 * segmentSize - 1);
+    int pos1 = posDist(rng);
+    int pos2 = pos1 + segmentSize;
+    int pos3 = pos2 + segmentSize;
+    int pos4 = pos3 + segmentSize;
 
-        // Adjust if boundaries are exceeded
-        if (pos4 >= n)
-        {
-            pos1 = 0;
-            pos2 = pos1 + segmentSize;
-            pos3 = pos2 + segmentSize;
-            pos4 = pos3 + segmentSize;
-        }
-
-        // Extract the four segments
-        std::vector<int> part1(schedule.begin() + pos1, schedule.begin() + pos2);
-        std::vector<int> part2(schedule.begin() + pos2, schedule.begin() + pos3);
-        std::vector<int> part3(schedule.begin() + pos3, schedule.begin() + pos4);
-
-        // Remove the four segments from the schedule
-        schedule.erase(schedule.begin() + pos1, schedule.begin() + pos4);
-
-        // Reinsert the segments in a new order: part3, part1, part2
-        schedule.insert(schedule.begin() + pos1, part3.begin(), part3.end());
-        schedule.insert(schedule.begin() + pos1 + part3.size(), part1.begin(), part1.end());
-        schedule.insert(schedule.begin() + pos1 + part3.size() + part1.size(), part2.begin(), part2.end());
+    // Adjust if boundaries are exceeded
+    if (pos4 > n) {
+        pos1 = 0;
+        pos2 = pos1 + segmentSize;
+        pos3 = pos2 + segmentSize;
+        pos4 = n; // Ensure pos4 does not exceed n
     }
 
-    // Additional random shuffling of a block (further diversification)
-    if (perturbationChoice == 3)
-    {
-        std::uniform_int_distribution<int> blockSizeDist(3, std::min(7, n / 3));
-        int blockSize = blockSizeDist(rng);
+    // Extract the four segments
+    std::vector<int> part1(schedule.begin() + pos1, schedule.begin() + pos2);
+    std::vector<int> part2(schedule.begin() + pos2, schedule.begin() + pos3);
+    std::vector<int> part3(schedule.begin() + pos3, schedule.begin() + pos4);
 
-        if (blockSize < n)
-        {
-            std::uniform_int_distribution<int> startIndexDist(0, n - blockSize - 1);
-            int startIdx = startIndexDist(rng);
+    // Remove the segments from the schedule
+    schedule.erase(schedule.begin() + pos1, schedule.begin() + pos4);
 
-            // Shuffle the block of jobs
-            std::shuffle(schedule.begin() + startIdx, schedule.begin() + startIdx + blockSize, rng);
-        }
-    }
+    // Reinsert the segments in the new order: part3, part1, part2
+    schedule.insert(schedule.begin() + pos1, part3.begin(), part3.end());
+    schedule.insert(schedule.begin() + pos1 + part3.size(), part1.begin(), part1.end());
+    schedule.insert(schedule.begin() + pos1 + part3.size() + part1.size(), part2.begin(), part2.end());
 }
+
 
 // std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<Order>& orders,
 //                      const std::vector<std::vector<int>>& setupTimes,
@@ -512,43 +595,63 @@ void perturbSolution(std::vector<int> &schedule, int perturbationStrength)
 //
 //     return bestSolution;
 // }
-
-std::vector<int> ILS(const std::vector<int> &initialSchedule, const std::vector<Order> &orders,
-                     const std::vector<std::vector<int>> &setupTimes,
-                     const std::vector<int> &initialSetupTimes)
-{
+std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<Order>& orders,
+                     const std::vector<std::vector<int>>& setupTimes,
+                     const std::vector<int>& initialSetupTimes, double& currentPenaltyCost,
+                     TabuList& tabuList) {
     std::vector<int> bestSolution = initialSchedule;
-    double bestPenalty = calculateTotalPenalty(bestSolution, orders, setupTimes, initialSetupTimes);
+    double bestPenalty = currentPenaltyCost;
 
     std::vector<int> currentSolution = bestSolution;
-    double currentPenalty = bestPenalty; // Track current penalty
+    double currentPenalty = bestPenalty;
     int noImprovementCounter = 0;
     int perturbationStrength = 1;
 
     int iteration = 0;
 
-    while (noImprovementCounter < MAX_NO_IMPROVEMENT_ITERATIONS)
-    {
+    while (noImprovementCounter < MAX_NO_IMPROVEMENT_ITERATIONS) {
         iteration++;
 
+        // Perform RVND local search
         currentSolution = adaptiveRVND(currentSolution, orders, setupTimes, initialSetupTimes, currentPenalty);
+
+        size_t currentHash = computeScheduleHash(currentSolution);
 
         std::cout << "Iteration: " << iteration
                   << ", Current Penalty: " << currentPenalty
                   << ", Best Penalty: " << bestPenalty
                   << ", No Improvement Counter: " << noImprovementCounter << std::endl;
 
-        if (currentPenalty + IMPROVEMENT_THRESHOLD < bestPenalty)
-        {
+        if (currentPenalty < bestPenalty) {
             // Improvement found
             bestSolution = currentSolution;
             bestPenalty = currentPenalty;
             noImprovementCounter = 0;
-            perturbationStrength = 1; // Reset perturbation strength
-        }
-        else
-        {
-            // No significant improvement
+            perturbationStrength = 1;
+            // Clear the Tabu List when an improving solution is found
+            tabuList.clear();
+        } else if (currentPenalty == bestPenalty) {
+            if (!tabuList.isTabu(currentHash)) {
+                // Not in Tabu List, accept the solution
+                bestSolution = currentSolution;
+                bestPenalty = currentPenalty;
+                noImprovementCounter = 0;
+                perturbationStrength = 1;
+                // Add to Tabu List
+                tabuList.addSolution(currentHash);
+            } else {
+                // Solution is in Tabu List, perturb the solution
+                while (tabuList.isTabu(currentHash) && currentPenalty == bestPenalty) {
+                    // Perturb the current solution
+                    perturbSolution(currentSolution, perturbationStrength);
+                    currentPenalty = calculateTotalPenalty(currentSolution, orders, setupTimes, initialSetupTimes);
+                    currentHash = computeScheduleHash(currentSolution);
+                }
+                perturbationStrength = std::min(perturbationStrength + 1, PERTURBATION_STRENGTH_MAX);
+                continue;
+            }
+        } else {
+            // Worse solution, increase no improvement counter
             noImprovementCounter++;
             perturbationStrength = std::min(perturbationStrength + 1, PERTURBATION_STRENGTH_MAX);
         }
@@ -558,5 +661,6 @@ std::vector<int> ILS(const std::vector<int> &initialSchedule, const std::vector<
         currentPenalty = calculateTotalPenalty(currentSolution, orders, setupTimes, initialSetupTimes);
     }
 
+    currentPenaltyCost = bestPenalty;
     return bestSolution;
 }

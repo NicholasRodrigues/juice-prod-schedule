@@ -63,29 +63,29 @@ int main(int argc, char *argv[])
     double totalPenaltyCost = 0.0;
     auto start = std::chrono::high_resolution_clock::now();
 
-    // Generate initial greedy schedule
-    std::vector<int> initialSchedule = GRASP(orders, setupTimes, initialSetupTimes, totalPenaltyCost);
-
-    // Output in a parsable format for the shell script
-    std::cout << "INITIAL_SCHEDULE: ";
-    for (int i : initialSchedule)
-    {
-        std::cout << i << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "TOTAL_PENALTY_GREEDY: " << totalPenaltyCost << std::endl;
+//    // Generate initial greedy schedule
+//    std::vector<int> initialSchedule = GRASP(orders, setupTimes, initialSetupTimes, totalPenaltyCost);
+//
+//    // Output in a parsable format for the shell script
+//    std::cout << "INITIAL_SCHEDULE: ";
+//    for (int i : initialSchedule)
+//    {
+//        std::cout << i << " ";
+//    }
+//    std::cout << std::endl;
+//    std::cout << "TOTAL_PENALTY_GREEDY: " << totalPenaltyCost << std::endl;
 
     // Calculate GAP for greedy solution
-    double greedyGAP = 0.0;
-    if (optimalPenalties.find(instanceName) != optimalPenalties.end())
-    {
-        double optimalPenalty = optimalPenalties[instanceName];
-        greedyGAP = ((totalPenaltyCost - optimalPenalty) / optimalPenalty) * 100.0;
-        std::cout << "GAP_GREEDY: " << greedyGAP << "%" << std::endl;
-    }
+//    double greedyGAP = 0.0;
+//    if (optimalPenalties.find(instanceName) != optimalPenalties.end())
+//    {
+//        double optimalPenalty = optimalPenalties[instanceName];
+//        greedyGAP = ((totalPenaltyCost - optimalPenalty) / optimalPenalty) * 100.0;
+//        std::cout << "GAP_GREEDY: " << greedyGAP << "%" << std::endl;
+//    }
 
     // Perform ILS optimization with Adaptive RVND
-    std::vector<int> optimizedSchedule = ILS(initialSchedule, orders, setupTimes, initialSetupTimes);
+    std::vector<int> optimizedSchedule = GRASP(orders, setupTimes, initialSetupTimes, totalPenaltyCost);
 
     // Post-optimization cost calculation
     double totalPenaltyAfterOptimization = calculateTotalPenalty(optimizedSchedule, orders, setupTimes, initialSetupTimes);
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
-    std::cout << "EXECUTION_TIME: " << elapsed.count() << " seconds" << std::endl;
+    std::cout << "EXECUTION_TIME: " << elapsed.count() << std::endl;
 
     // printMemoryUsage();
 

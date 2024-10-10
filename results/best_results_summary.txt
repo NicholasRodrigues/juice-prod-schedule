@@ -47,3 +47,5 @@ n60M - Best Penalty: 1000000000, Best GAP: 1000000000%, Execution Time: 10000000
 n60N - Best Penalty: 1000000000, Best GAP: 1000000000%, Execution Time: 1000000000 seconds
 n60O - Best Penalty: 1000000000, Best GAP: 1000000000%, Execution Time: 1000000000 seconds
 n60P - Best Penalty: 1000000000, Best GAP: 1000000000%, Execution Time: 1000000000 seconds
+n60A - Best Penalty: 471, Best GAP: 3.97351%, Execution Time: 455.055 seconds
+n60B - Best Penalty: 2083, Best GAP: 18.5544%, Execution Time: 358.864 seconds
