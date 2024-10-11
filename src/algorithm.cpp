@@ -49,9 +49,8 @@ std::unordered_set<std::string> tabuList;
 // Symmetric matrix for solution encoding
 std::vector<std::vector<int>> U; // Symmetric matrix
 
-void initializeMatrixU(int n) {
+void initializeMatrixU(int n, std::mt19937& rng) {
     U.resize(n, std::vector<int>(n));
-    std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution<int> dist(1, 1'000'000);
 
     for (int i = 0; i < n; ++i) {
@@ -70,12 +69,11 @@ std::string encodeSolution(const std::vector<int>& schedule) {
 }
 
 // Constructive Heuristic (Randomized Insertion)
-std::vector<int> randomizedInsertionHeuristic(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes) {
+std::vector<int> randomizedInsertionHeuristic(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, std::mt19937& rng) {
     int n = orders.size();
     std::vector<int> schedule;
     std::vector<bool> scheduled(n, false);
 
-    std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution<int> dist(0, n - 1);
 
     // Select 10% random jobs
@@ -188,16 +186,19 @@ void perturbSolution(std::vector<int>& schedule) {
 // ILS-RVND Implementation with structured output
 // ILS-RVND Implementation with structured output for the best solution
 // ILS-RVND Implementation with structured output for the best solution
-std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes) {
+std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, unsigned int seed) {
     double bestPenalty = std::numeric_limits<double>::infinity();
     std::vector<int> bestSolution;
-    initializeMatrixU(orders.size());
+
+    // Initialize random number generator with the provided seed
+    std::mt19937 rng(seed);
+    initializeMatrixU(orders.size(), rng);
 
     for (int i = 0; i < maxIter; ++i) {
         int iterILS = 0;
 
         // Initial Solution
-        std::vector<int> s = randomizedInsertionHeuristic(orders, setupTimes);
+        std::vector<int> s = randomizedInsertionHeuristic(orders, setupTimes, rng);
         double currentPenalty = calculateTotalPenalty(s, orders, setupTimes, setupTimes[0]);
 
         while (iterILS < maxIterLS) {
@@ -228,7 +229,7 @@ std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& 
 
             // Structured output: Best solution update
             std::cout << "=============================================" << std::endl;
-            std::cout << "ILS iteration " << i + 1 << ": Best solution updated" << std::endl;
+            std::cout << "ILS iteration " << i + 1 << ": Best solution updated (Seed: " << seed << ")" << std::endl;
             std::cout << "Best Penalty: " << bestPenalty << std::endl;
             std::cout << "Best Schedule: [";
             for (size_t j = 0; j < bestSolution.size(); ++j) {
@@ -241,7 +242,7 @@ std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& 
     }
 
     double finalPenalty = calculateTotalPenalty(bestSolution, orders, setupTimes, setupTimes[0]); // Recalculate the penalty for the best solution
-    std::cout << "Final Best Solution After All Iterations: " << std::endl;
+    std::cout << "Final Best Solution After All Iterations (Seed: " << seed << "): " << std::endl;
     std::cout << "Best Penalty: " << finalPenalty << std::endl;
     std::cout << "Best Schedule: [";
     for (size_t j = 0; j < bestSolution.size(); ++j) {
@@ -252,4 +253,3 @@ std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& 
 
     return bestSolution;
 }
-

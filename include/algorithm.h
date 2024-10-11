@@ -8,7 +8,7 @@
 
 // Constants
 constexpr double IMPROVEMENT_THRESHOLD = 1.0;
-constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 1000;
+constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 240;
 constexpr int PERTURBATION_STRENGTH_MIN = 1;
 constexpr int PERTURBATION_STRENGTH_MAX = 57;
 
@@ -45,7 +45,7 @@ constexpr int PERTURBATION_STRENGTH_MAX = 57;
 //                     const std::vector<std::vector<int>>& setupTimes,
 //                     const std::vector<int>& initialSetupTimes);
 
-void initializeMatrixU(int n);
+void initializeMatrixU(int n, std::mt19937& rng);
 
 // Encode solution for O(1) lookup in Tabu List
 std::string encodeSolution(const std::vector<int>& schedule);
@@ -56,8 +56,8 @@ double calculateTotalPenalty(const std::vector<int>& schedule, const std::vector
                              const std::vector<int>& initialSetupTimes);
 
 // Randomized Insertion Heuristic for generating initial solution
-std::vector<int> randomizedInsertionHeuristic(const std::vector<Order>& orders,
-                                              const std::vector<std::vector<int>>& setupTimes);
+std::vector<int> randomizedInsertionHeuristic(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, std::mt19937& rng);
+
 
 // Randomized Variable Neighborhood Descent (RVND) algorithm
 std::vector<int> RVND(std::vector<int>& schedule, const std::vector<Order>& orders,
@@ -67,8 +67,7 @@ std::vector<int> RVND(std::vector<int>& schedule, const std::vector<Order>& orde
 void perturbSolution(std::vector<int>& schedule);
 
 // Main ILS-RVND algorithm
-std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& orders,
-                          const std::vector<std::vector<int>>& setupTimes);
+std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, unsigned int seed);
 double calculateTotalPenalty(const std::vector<int>& schedule,
                              const std::vector<Order>& orders,
                              const std::vector<std::vector<int>>& setupTimes,
