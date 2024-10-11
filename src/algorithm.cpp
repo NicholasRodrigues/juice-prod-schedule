@@ -187,6 +187,7 @@ void perturbSolution(std::vector<int>& schedule) {
 // ILS-RVND Implementation
 // ILS-RVND Implementation with structured output
 // ILS-RVND Implementation with structured output for the best solution
+// ILS-RVND Implementation with structured output for the best solution
 std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes) {
     double bestPenalty = std::numeric_limits<double>::infinity();
     std::vector<int> bestSolution;
@@ -203,7 +204,6 @@ std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& 
             perturbSolution(s); // Diversification (Perturb)
             s = RVND(s, orders, setupTimes); // Intensification (LS)
             double newPenalty = calculateTotalPenalty(s, orders, setupTimes, setupTimes[0]);
-
 
             // Solution comparison with encoded version for O(1) lookup
             std::string encodedSolution = encodeSolution(s);
@@ -240,9 +240,9 @@ std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& 
         }
     }
 
-    // Final print of the best solution
+    double finalPenalty = calculateTotalPenalty(bestSolution, orders, setupTimes, setupTimes[0]); // Recalculate the penalty for the best solution
     std::cout << "Final Best Solution After All Iterations: " << std::endl;
-    std::cout << "Best Penalty: " << bestPenalty << std::endl;
+    std::cout << "Best Penalty: " << finalPenalty << std::endl;
     std::cout << "Best Schedule: [";
     for (size_t j = 0; j < bestSolution.size(); ++j) {
         std::cout << bestSolution[j];
