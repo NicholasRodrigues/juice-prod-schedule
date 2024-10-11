@@ -7,14 +7,6 @@
 #include "schedule_data.h"
 #include <random>
 
-// #include <sys/resource.h>
-
-// void printMemoryUsage() {
-//     struct rusage usage;
-//     getrusage(RUSAGE_SELF, &usage);
-//     std::cout << "Maximum resident set size: " << usage.ru_maxrss << " kilobytes" << std::endl;
-// }
-
 namespace fs = std::filesystem;
 
 int main(int argc, char *argv[])
@@ -68,7 +60,7 @@ int main(int argc, char *argv[])
 
     std::random_device rd;
     unsigned int seed = rd();
-    std::mt19937 rng(seed)
+    std::mt19937 rng(seed);
 
 //    std::vector<int> schedule = {29, 57, 40, 54, 9, 10, 12, 19, 60, 50, 55, 15, 37, 34, 18, 16, 2, 8, 46, 51, 23, 44, 17, 20, 39, 26, 48, 41, 1, 25, 56, 58, 30, 21, 27, 28, 6, 36, 43, 3, 7, 45, 22, 13, 31, 42, 5, 14, 11, 49, 33, 47, 24, 35, 52, 32, 38, 4, 53, 59};
 //    calculateTotalPenaltyForSchedule(schedule, orders, setupTimes, initialSetupTimes);
@@ -102,7 +94,6 @@ int main(int argc, char *argv[])
     double gap = ((scheduleData.totalPenalty - optimalPenalty) / optimalPenalty) * 100;
     std::cout << "GAP_OPTIMIZED: " << gap << "%" << std::endl;
 
-    // printMemoryUsage();
 
     return 0;
 }
