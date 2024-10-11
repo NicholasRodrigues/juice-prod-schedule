@@ -664,8 +664,9 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule,
     int perturbationStrength = 1;
 
     int iteration = 0;
+    int max_no_improvement_iterations = 4*initialSchedule.size();
 
-    while (noImprovementCounter < MAX_NO_IMPROVEMENT_ITERATIONS) {
+    while (noImprovementCounter < max_no_improvement_iterations) {
         iteration++;
 
         // Perform RVND local search, passing RNG down
