@@ -25,10 +25,17 @@ extern int block_shift_improvement_count;
 
 size_t computeScheduleHash(const std::vector<int>& schedule);
 
-std::vector<int> GRASP(const std::vector<Order> &orders,
-                       const std::vector<std::vector<int>> &setupTimes,
-                       const std::vector<int> &initialSetupTimes,
-                       double &totalPenaltyCost);
+
+double calculateTotalPenaltyForSchedule(const std::vector<int>& schedule,
+                                 const std::vector<Order>& orders,
+                                 const std::vector<std::vector<int>>& setupTimes,
+                                 const std::vector<int>& initialSetupTimes);
+
+std::vector<int> GRASP(const std::vector<Order>& orders,
+                       const std::vector<std::vector<int>>& setupTimes,
+                       const std::vector<int>& initialSetupTimes,
+                       double& totalPenaltyCost,
+                       std::mt19937& rng);
 
 struct pair_hash
 {
@@ -59,9 +66,9 @@ std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
                                  const std::vector<int> &initialSetupTimes,
                                  double &totalPenaltyCost);
 
-std::vector<int> adaptiveRVND(ScheduleData &scheduleData, const std::vector<Order> &orders,
-                              const std::vector<std::vector<int>> &setupTimes,
-                              const std::vector<int> &initialSetupTimes);
+void adaptiveRVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
+                  const std::vector<std::vector<int>>& setupTimes,
+                  const std::vector<int>& initialSetupTimes, std::mt19937& rng);
 
 void adaptiveShuffle(
     std::vector<std::function<bool(std::vector<int> &, const std::vector<Order> &,
@@ -70,9 +77,12 @@ void adaptiveShuffle(
     std::vector<double> &neighborhoodWeights,
     std::mt19937 &g);
 
-void perturbSolution(std::vector<int> &schedule, int perturbationStrength);
+void perturbSolution(std::vector<int>& schedule, int perturbationStrength, std::mt19937& rng);
 
-std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<Order>& orders,
+std::vector<int> ILS(const std::vector<int>& initialSchedule,
+                     const std::vector<Order>& orders,
                      const std::vector<std::vector<int>>& setupTimes,
-                     const std::vector<int>& initialSetupTimes, double& currentPenaltyCost);
+                     const std::vector<int>& initialSetupTimes,
+                     double& currentPenaltyCost,
+                     std::mt19937& rng);
 #endif // ALGORITHM_H
