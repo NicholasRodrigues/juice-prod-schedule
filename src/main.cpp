@@ -64,28 +64,7 @@ int main(int argc, char* argv[]) {
 
     double totalPenaltyCost = 0.0;
     auto start = std::chrono::high_resolution_clock::now();
-
-//    // Generate initial greedy schedule
-//    std::vector<int> initialSchedule = greedyAlgorithm(orders, setupTimes, initialSetupTimes, totalPenaltyCost);
-//
-//    // Output initial schedule
-//    std::cout << "INITIAL_SCHEDULE: ";
-//    for (int i : initialSchedule) {
-//        std::cout << i << " ";
-//    }
-//    std::cout << std::endl;
-//    std::cout << "TOTAL_PENALTY_GREEDY: " << totalPenaltyCost << std::endl;
-//
-//    // Calculate GAP for greedy solution
-//    double greedyGAP = 0.0;
-//    if (optimalPenalties.find(instanceName) != optimalPenalties.end()) {
-//        double optimalPenalty = optimalPenalties[instanceName];
-//        greedyGAP = ((totalPenaltyCost - optimalPenalty) / optimalPenalty) * 100.0;
-//        std::cout << "GAP_GREEDY: " << greedyGAP << "%" << std::endl;
-//    } else {
-//        std::cerr << "Warning: No optimal penalty found for " << instanceName << std::endl;
-//    }
-
+    
     // Perform ILS optimization with Adaptive RVND
     int maxIter = 1000;  // Maximum number of iterations for ILS
     int maxIterLS = 100;  // Maximum number of local search iterations
