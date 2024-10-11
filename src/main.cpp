@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
     int maxIter = 240;  // Maximum number of iterations for ILS
     int maxIterLS = 20;  // Maximum number of local search iterations
 
-    std::vector<int> optimizedSchedule = ILS_RVND(maxIter, maxIterLS, orders, setupTimes, seed);
+    std::vector<int> optimizedSchedule = ILS_RVND(maxIter, maxIterLS, orders, setupTimes, initialSetupTimes, seed);
 
     // Post-optimization cost calculation
     double totalPenaltyAfterOptimization = calculateTotalPenalty(optimizedSchedule, orders, setupTimes, initialSetupTimes);

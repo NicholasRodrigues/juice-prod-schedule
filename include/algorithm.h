@@ -56,18 +56,28 @@ double calculateTotalPenalty(const std::vector<int>& schedule, const std::vector
                              const std::vector<int>& initialSetupTimes);
 
 // Randomized Insertion Heuristic for generating initial solution
-std::vector<int> randomizedInsertionHeuristic(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, std::mt19937& rng);
+std::vector<int> randomizedInsertionHeuristic(const std::vector<Order>& orders,
+                                              const std::vector<std::vector<int>>& setupTimes,
+                                              const std::vector<int>& initialSetupTimes,
+                                              std::mt19937& rng);
 
 
 // Randomized Variable Neighborhood Descent (RVND) algorithm
-std::vector<int> RVND(std::vector<int>& schedule, const std::vector<Order>& orders,
-                      const std::vector<std::vector<int>>& setupTimes);
+std::vector<int> RVND(std::vector<int>& schedule,
+                      const std::vector<Order>& orders,
+                      const std::vector<std::vector<int>>& setupTimes,
+                      const std::vector<int>& initialSetupTimes);
 
 // Perturbation function for ILS using Double-Bridge move
 void perturbSolution(std::vector<int>& schedule);
 
 // Main ILS-RVND algorithm
-std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, unsigned int seed);
+std::vector<int> ILS_RVND(int maxIter,
+                          int maxIterLS,
+                          const std::vector<Order>& orders,
+                          const std::vector<std::vector<int>>& setupTimes,
+                          const std::vector<int>& initialSetupTimes,
+                          unsigned int seed);
 double calculateTotalPenalty(const std::vector<int>& schedule,
                              const std::vector<Order>& orders,
                              const std::vector<std::vector<int>>& setupTimes,

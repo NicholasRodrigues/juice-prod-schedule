@@ -69,7 +69,10 @@ std::string encodeSolution(const std::vector<int>& schedule) {
 }
 
 // Constructive Heuristic (Randomized Insertion)
-std::vector<int> randomizedInsertionHeuristic(const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, std::mt19937& rng) {
+std::vector<int> randomizedInsertionHeuristic(const std::vector<Order>& orders,
+                                              const std::vector<std::vector<int>>& setupTimes,
+                                              const std::vector<int>& initialSetupTimes,
+                                              std::mt19937& rng) {
     int n = orders.size();
     std::vector<int> schedule;
     std::vector<bool> scheduled(n, false);
@@ -101,7 +104,7 @@ std::vector<int> randomizedInsertionHeuristic(const std::vector<Order>& orders, 
                 std::vector<int> tempSchedule = schedule;
                 tempSchedule.insert(tempSchedule.begin() + pos, unscheduledJob);
 
-                double currentCost = calculateTotalPenalty(tempSchedule, orders, setupTimes, setupTimes[0]);
+                double currentCost = calculateTotalPenalty(tempSchedule, orders, setupTimes, initialSetupTimes);
                 if (currentCost < bestCost) {
                     bestCost = currentCost;
                     bestTask = unscheduledJob;
@@ -118,7 +121,10 @@ std::vector<int> randomizedInsertionHeuristic(const std::vector<Order>& orders, 
 }
 
 // RVND (Randomized Variable Neighborhood Descent)
-std::vector<int> RVND(std::vector<int>& schedule, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes) {
+std::vector<int> RVND(std::vector<int>& schedule,
+                      const std::vector<Order>& orders,
+                      const std::vector<std::vector<int>>& setupTimes,
+                      const std::vector<int>& initialSetupTimes) {
     std::vector<std::function<bool(std::vector<int>&, const std::vector<Order>&,
     const std::vector<std::vector<int>>&,
     const std::vector<int>&)>> neighborhoods = {
@@ -141,7 +147,7 @@ std::vector<int> RVND(std::vector<int>& schedule, const std::vector<Order>& orde
         std::shuffle(neighborhoods.begin(), neighborhoods.end(), rng);
 
         for (auto& neighborhood : neighborhoods) {
-            if (neighborhood(schedule, orders, setupTimes, setupTimes[0])) {
+            if (neighborhood(schedule, orders, setupTimes, initialSetupTimes)) {
                 improvement = true;
                 break;
             }
@@ -186,7 +192,12 @@ void perturbSolution(std::vector<int>& schedule) {
 // ILS-RVND Implementation with structured output
 // ILS-RVND Implementation with structured output for the best solution
 // ILS-RVND Implementation with structured output for the best solution
-std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& orders, const std::vector<std::vector<int>>& setupTimes, unsigned int seed) {
+std::vector<int> ILS_RVND(int maxIter,
+                          int maxIterLS,
+                          const std::vector<Order>& orders,
+                          const std::vector<std::vector<int>>& setupTimes,
+                          const std::vector<int>& initialSetupTimes,
+                          unsigned int seed) {
     double bestPenalty = std::numeric_limits<double>::infinity();
     std::vector<int> bestSolution;
 
@@ -198,13 +209,13 @@ std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& 
         int iterILS = 0;
 
         // Initial Solution
-        std::vector<int> s = randomizedInsertionHeuristic(orders, setupTimes, rng);
-        double currentPenalty = calculateTotalPenalty(s, orders, setupTimes, setupTimes[0]);
+        std::vector<int> s = randomizedInsertionHeuristic(orders, setupTimes, initialSetupTimes, rng);
+        double currentPenalty = calculateTotalPenalty(s, orders, setupTimes, initialSetupTimes);
 
         while (iterILS < maxIterLS) {
             perturbSolution(s); // Diversification (Perturb)
-            s = RVND(s, orders, setupTimes); // Intensification (LS)
-            double newPenalty = calculateTotalPenalty(s, orders, setupTimes, setupTimes[0]);
+            s = RVND(s, orders, setupTimes, initialSetupTimes);  // Intensification (LS)
+            double newPenalty = calculateTotalPenalty(s, orders, setupTimes, initialSetupTimes);
 
             // Solution comparison with encoded version for O(1) lookup
             std::string encodedSolution = encodeSolution(s);
@@ -241,7 +252,7 @@ std::vector<int> ILS_RVND(int maxIter, int maxIterLS, const std::vector<Order>& 
         }
     }
 
-    double finalPenalty = calculateTotalPenalty(bestSolution, orders, setupTimes, setupTimes[0]); // Recalculate the penalty for the best solution
+    double finalPenalty = calculateTotalPenalty(bestSolution, orders, setupTimes, initialSetupTimes);// Recalculate the penalty for the best solution
     std::cout << "Final Best Solution After All Iterations (Seed: " << seed << "): " << std::endl;
     std::cout << "Best Penalty: " << finalPenalty << std::endl;
     std::cout << "Best Schedule: [";

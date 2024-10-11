@@ -61,7 +61,7 @@ bool reinsertionNeighborhood(std::vector<int>& schedule, const std::vector<Order
     bool improvementFound = false;
 
     // Consider subsequences of varying lengths
-    for (int l = 1; l <= std::min(10, n); ++l) {
+    for (int l = 1; l <= std::min(3, n); ++l) {
         for (int i = 0; i <= n - l; ++i) {
             for (int j = 0; j <= n - l; ++j) {
                 if (j >= i && j <= i + l - 1) continue;  // Skip invalid moves
@@ -120,9 +120,12 @@ bool twoOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& or
     int best_i = -1, best_j = -1;  // Indices for the best 2-opt move
     bool improvementFound = false;
 
-    // Evaluate all possible 2-opt moves
+    // Limit the block size to a maximum of 10
+    int maxBlocks = std::min(10, n);
+
+    // Evaluate all possible 2-opt moves with the limit
     for (int i = 0; i < n - 1; ++i) {
-        for (int j = i + 1; j < n; ++j) {
+        for (int j = i + 1; j < std::min(i + maxBlocks, n); ++j) {
             // Reverse the subsequence from i to j
             std::reverse(schedule.begin() + i, schedule.begin() + j + 1);
 
@@ -149,6 +152,7 @@ bool twoOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& or
 
     return false;  // No improvement found
 }
+
 
 bool blockInsertNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
                              const std::vector<std::vector<int>>& setupTimes,
