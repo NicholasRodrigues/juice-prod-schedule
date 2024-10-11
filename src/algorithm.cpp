@@ -388,7 +388,7 @@ std::vector<int> adaptiveRVND(ScheduleData &scheduleData, const std::vector<Orde
     const std::vector<std::vector<int>>&,
     const std::vector<int>&)>>
     neighborhoods = {
-            swapNeighborhood,
+//            swapNeighborhood,
             blockExchangeNeighborhood,
             blockShiftNeighborhood,
             twoOptNeighborhood

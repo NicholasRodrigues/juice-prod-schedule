@@ -172,7 +172,7 @@ bool blockExchangeNeighborhood(ScheduleData &scheduleData, const std::vector<Ord
     ScheduleData tempScheduleData;
 
     // Consider block sizes between 2 and 4
-    for (int l = 2; l <= 4; ++l) {
+    for (int l = 1; l <= 10; ++l) {
         for (int i = 0; i <= n - 2 * l; ++i) {
             for (int j = i + l; j <= n - l; ++j) {
                 tempScheduleData = scheduleData;
@@ -629,7 +629,7 @@ bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &or
 
     for (int i = 0; i < n - 1; ++i) {
         // Limit j to ensure the block size does not exceed 10
-        int max_j = std::min(n - 1, i + 9); // i + 9 ensures block size <= 10
+        int max_j = std::min(n - 1, i + 4); // i + 9 ensures block size <= 10
         for (int j = i + 1; j <= max_j; ++j) {
             tempScheduleData = scheduleData;
 
