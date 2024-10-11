@@ -13,11 +13,30 @@
 #include <queue>
 #include "tabu_list.h"
 
+
+// algorithm.cpp
+int swap_improvement_count = 0;
+int block_exchange_improvement_count = 0;
+int two_opt_improvement_count = 0;
+int block_shift_improvement_count = 0;
+
+
 // Tabu Entry structure
 struct TabuEntry {
     size_t solutionHash;
     int tenure;
 };
+
+void printImprovementStatistics() {
+    std::cout << "=============================================" << std::endl;
+    std::cout << "Improvement Statistics for this run:" << std::endl;
+    std::cout << "Swap Neighborhood: " << swap_improvement_count << " improvements" << std::endl;
+    std::cout << "Block Exchange Neighborhood: " << block_exchange_improvement_count << " improvements" << std::endl;
+    std::cout << "2-Opt Neighborhood: " << two_opt_improvement_count << " improvements" << std::endl;
+    std::cout << "Block Shift Neighborhood: " << block_shift_improvement_count << " improvements" << std::endl;
+    std::cout << "=============================================" << std::endl;
+}
+
 
 const int TABU_TENURE = 100;           // Tenure for tabu entries
 const int MAX_TABU_LIST_SIZE = 1000;  // Maximum size of the tabu list
@@ -237,19 +256,42 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
         if (iterationPenaltyCost < bestPenaltyCost) {
             bestSolution = newSchedule;
             bestPenaltyCost = iterationPenaltyCost;
+
+            // Structured output when a new best solution is found
+            std::cout << "=============================================" << std::endl;
+            std::cout << "GRASP iteration " << iter + 1 << ": Best solution updated" << std::endl;
+            std::cout << "Best Penalty: " << bestPenaltyCost << std::endl;
+            std::cout << "Best Schedule: [";
+            for (size_t j = 0; j < bestSolution.size(); ++j) {
+                std::cout << bestSolution[j] + 1;  // Increment by 1 for display
+                if (j != bestSolution.size() - 1) std::cout << ", ";
+            }
+            std::cout << "]" << std::endl;
+            std::cout << "=============================================" << std::endl;
         }
 
         if (bestPenaltyCost == 0) {
-            break;
+            break;  // Early exit if optimal solution found
         }
     }
 
     totalPenaltyCost = bestPenaltyCost;
 
-    std::cout << "Penalty cost after GRASP: " << bestPenaltyCost << std::endl;
+    // Final best solution after all GRASP iterations
+    std::cout << "Final Best Solution After GRASP: " << std::endl;
+    std::cout << "Best Penalty: " << bestPenaltyCost << std::endl;
+    std::cout << "Best Schedule: [";
+    for (size_t j = 0; j < bestSolution.size(); ++j) {
+        std::cout << bestSolution[j] + 1;  // Increment by 1 for display
+        if (j != bestSolution.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+
+    printImprovementStatistics();
 
     return bestSolution;
 }
+
 
 // std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
 //                               const std::vector<std::vector<int>>& setupTimes,
@@ -624,10 +666,10 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule, const std::vector<
         // Perform RVND local search
         adaptiveRVND(currentScheduleData, orders, setupTimes, initialSetupTimes);
 
-        std::cout << "Iteration: " << iteration
-                  << ", Current Penalty: " << currentScheduleData.totalPenalty
-                  << ", Best Penalty: " << bestPenalty
-                  << ", No Improvement Counter: " << noImprovementCounter << std::endl;
+//        std::cout << "Iteration: " << iteration
+//                  << ", Current Penalty: " << currentScheduleData.totalPenalty
+//                  << ", Best Penalty: " << bestPenalty
+//                  << ", No Improvement Counter: " << noImprovementCounter << std::endl;
 
         if (currentScheduleData.totalPenalty < bestPenalty)
         {

@@ -13,9 +13,15 @@ constexpr double IMPROVEMENT_THRESHOLD = 1.0;
 constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 240;
 constexpr int PERTURBATION_STRENGTH_MIN = 1;
 constexpr int PERTURBATION_STRENGTH_MAX = 57;
-
-constexpr int GRASP_ITERATIONS = 20;
+void printImprovementStatistics();
+constexpr int GRASP_ITERATIONS = 10;
 constexpr int RCL_SIZE = 15;
+
+// algorithm.h
+extern int swap_improvement_count;
+extern int block_exchange_improvement_count;
+extern int two_opt_improvement_count;
+extern int block_shift_improvement_count;
 
 size_t computeScheduleHash(const std::vector<int>& schedule);
 

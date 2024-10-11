@@ -8,8 +8,8 @@
 // Swap Neighborhood Function
 bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
                       const std::vector<std::vector<int>> &setupTimes,
-                      const std::vector<int> &initialSetupTimes)
-{
+                      const std::vector<int> &initialSetupTimes) {
+
     int n = scheduleData.schedule.size();
     int best_i = -1, best_j = -1;
     bool improvementFound = false;
@@ -17,10 +17,8 @@ bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orde
 
     ScheduleData tempScheduleData;
 
-    for (int i = 0; i < n - 1; ++i)
-    {
-        for (int j = i + 1; j < n; ++j)
-        {
+    for (int i = 0; i < n - 1; ++i) {
+        for (int j = i + 1; j < n; ++j) {
             tempScheduleData = scheduleData;
 
             // Swap positions i and j in the temporary schedule
@@ -30,8 +28,7 @@ bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orde
             calculateTotalPenalty(tempScheduleData, orders, setupTimes, initialSetupTimes);
             double newPenalty = tempScheduleData.totalPenalty;
 
-            if (newPenalty < bestPenalty)
-            {
+            if (newPenalty < bestPenalty) {
                 bestPenalty = newPenalty;
                 best_i = i;
                 best_j = j;
@@ -40,19 +37,21 @@ bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orde
         }
     }
 
-    if (improvementFound)
-    {
+    if (improvementFound) {
         // Apply the best swap to the actual schedule
         std::swap(scheduleData.schedule[best_i], scheduleData.schedule[best_j]);
 
         // Recalculate total penalty for the actual schedule
         calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
 
+        // Increment the improvement counter
+        swap_improvement_count++;
         return true;
     }
 
     return false;
 }
+
 
 
 double computeDeltaPenaltySwap(const ScheduleData &scheduleData, const std::vector<Order> &orders,
@@ -163,8 +162,8 @@ void updateScheduleDataSwap(ScheduleData &scheduleData, const std::vector<Order>
 // Block Exchange Neighborhood (Exchanges two blocks)
 bool blockExchangeNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
                                const std::vector<std::vector<int>> &setupTimes,
-                               const std::vector<int> &initialSetupTimes)
-{
+                               const std::vector<int> &initialSetupTimes) {
+
     int n = scheduleData.schedule.size();
     int best_i = -1, best_j = -1, best_l = -1;
     bool improvementFound = false;
@@ -173,12 +172,9 @@ bool blockExchangeNeighborhood(ScheduleData &scheduleData, const std::vector<Ord
     ScheduleData tempScheduleData;
 
     // Consider block sizes between 2 and 4
-    for (int l = 2; l <= 4; ++l)
-    {
-        for (int i = 0; i <= n - 2 * l; ++i)
-        {
-            for (int j = i + l; j <= n - l; ++j)
-            {
+    for (int l = 2; l <= 4; ++l) {
+        for (int i = 0; i <= n - 2 * l; ++i) {
+            for (int j = i + l; j <= n - l; ++j) {
                 tempScheduleData = scheduleData;
 
                 // Perform block exchange in the temporary schedule
@@ -189,8 +185,7 @@ bool blockExchangeNeighborhood(ScheduleData &scheduleData, const std::vector<Ord
                 calculateTotalPenalty(tempScheduleData, orders, setupTimes, initialSetupTimes);
                 double newPenalty = tempScheduleData.totalPenalty;
 
-                if (newPenalty < bestPenalty)
-                {
+                if (newPenalty < bestPenalty) {
                     bestPenalty = newPenalty;
                     best_i = i;
                     best_j = j;
@@ -201,8 +196,7 @@ bool blockExchangeNeighborhood(ScheduleData &scheduleData, const std::vector<Ord
         }
     }
 
-    if (improvementFound)
-    {
+    if (improvementFound) {
         // Apply the best block exchange to the actual schedule
         std::swap_ranges(scheduleData.schedule.begin() + best_i, scheduleData.schedule.begin() + best_i + best_l,
                          scheduleData.schedule.begin() + best_j);
@@ -210,6 +204,8 @@ bool blockExchangeNeighborhood(ScheduleData &scheduleData, const std::vector<Ord
         // Recalculate total penalty for the actual schedule
         calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
 
+        // Increment the improvement counter
+        block_exchange_improvement_count++;
         return true;
     }
 
@@ -341,7 +337,7 @@ bool blockShiftNeighborhood(ScheduleData &scheduleData, const std::vector<Order>
     ScheduleData tempScheduleData;
 
     // Consider block sizes from 1 to 5
-    for (int l = 1; l <= 5; ++l)
+    for (int l = 1; l <= 10; ++l)
     {
         for (int i = 0; i <= n - l; ++i)
         {
@@ -370,6 +366,7 @@ bool blockShiftNeighborhood(ScheduleData &scheduleData, const std::vector<Order>
 
                 if (newPenalty < bestPenalty)
                 {
+                    block_shift_improvement_count++;
                     bestPenalty = newPenalty;
                     best_i = i;
                     best_j = j;
@@ -621,8 +618,8 @@ void updateScheduleDataBlockShift(ScheduleData &scheduleData, const std::vector<
 // 2-Opt Neighborhood (Reverses two segments of the schedule)
 bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
                         const std::vector<std::vector<int>> &setupTimes,
-                        const std::vector<int> &initialSetupTimes)
-{
+                        const std::vector<int> &initialSetupTimes) {
+
     int n = scheduleData.schedule.size();
     int best_i = -1, best_j = -1;
     bool improvementFound = false;
@@ -630,10 +627,10 @@ bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &or
 
     ScheduleData tempScheduleData;
 
-    for (int i = 0; i < n - 1; ++i)
-    {
-        for (int j = i + 1; j < n; ++j)
-        {
+    for (int i = 0; i < n - 1; ++i) {
+        // Limit j to ensure the block size does not exceed 10
+        int max_j = std::min(n - 1, i + 9); // i + 9 ensures block size <= 10
+        for (int j = i + 1; j <= max_j; ++j) {
             tempScheduleData = scheduleData;
 
             // Apply the 2-opt move in the temporary schedule
@@ -643,8 +640,7 @@ bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &or
             calculateTotalPenalty(tempScheduleData, orders, setupTimes, initialSetupTimes);
             double newPenalty = tempScheduleData.totalPenalty;
 
-            if (newPenalty < bestPenalty)
-            {
+            if (newPenalty < bestPenalty) {
                 bestPenalty = newPenalty;
                 best_i = i;
                 best_j = j;
@@ -653,19 +649,22 @@ bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &or
         }
     }
 
-    if (improvementFound)
-    {
+    if (improvementFound) {
         // Apply the best 2-opt move to the actual schedule
         std::reverse(scheduleData.schedule.begin() + best_i, scheduleData.schedule.begin() + best_j + 1);
 
         // Recalculate total penalty for the actual schedule
         calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
 
+        // Increment the improvement counter
+        two_opt_improvement_count++;
         return true;
     }
 
     return false;
 }
+
+
 
 double computeDeltaPenaltyTwoOpt(const ScheduleData &scheduleData, const std::vector<Order> &orders,
                                  const std::vector<std::vector<int>> &setupTimes,
