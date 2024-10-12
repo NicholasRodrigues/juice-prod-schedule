@@ -12,25 +12,25 @@ namespace fs = std::filesystem;
 int main(int argc, char *argv[])
 {
     // Check if a file was passed as an argument
-    if (argc != 2)
+    if (argc != 2) //checa se na execução o nome do arquivo foi passado
     {
-        std::cerr << "Usage: " << argv[0] << " <instance_file_path>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <instance_file_path>" << std::endl; //se nao for, retorna um erro
         return 1;
     }
 
-    std::string filepath = argv[1];
-    if (!fs::exists(filepath))
+    std::string filepath = argv[1]; //O path do arquivo sempre é o argumento que vem depois da própria execução do arquivo main
+    if (!fs::exists(filepath)) //Checa se o arquivo existe naquele path solicitado
     {
-        std::cerr << "Error: File does not exist: " << filepath << std::endl;
+        std::cerr << "Error: File does not exist: " << filepath << std::endl; //Retorna um erro caso o arquivo nao exista
         return 1;
     }
 
-    std::vector<Order> orders;
-    std::vector<std::vector<int>> setupTimes;
-    std::vector<int> initialSetupTimes;
+    std::vector<Order> orders; //Inicializa um vetor de Order, que é uma struct que contém os dados de cada um dos pedidos de uma squedule
+    std::vector<std::vector<int>> setupTimes; //Inicializa um vetor de setupTimes de cada um dos tipos de suco
+    std::vector<int> initialSetupTimes; //Inicializa um vetor de setupTimes inicial, onde temos o tempo de setup que cada um dos sucos precisa pra começar
 
     // Map of optimal penalties for each instance
-    std::unordered_map<std::string, double> optimalPenalties = {
+    std::unordered_map<std::string, double> optimalPenalties = { //Aqui armazenamos em uma hash table os valores ótimos de cada um dos schedules solicitados no trabalho
             {"n60A", 453},
             {"n60B", 1757},
             {"n60C", 0},
@@ -48,18 +48,18 @@ int main(int argc, char *argv[])
             {"n60O", 527459},
             {"n60P", 396183}};
 
-    std::string filename = fs::path(filepath).filename().string();
-    std::string instanceName = filename.substr(0, filename.find('.'));
+    std::string filename = fs::path(filepath).filename().string(); //Aqui pegamos apenas o nome do arquivo, sem o path dele
+    std::string instanceName = filename.substr(0, filename.find('.')); //Aqui pegamos o nome desse arquivo e retiramos a extensao dele, pra ficar igual a hash table
 
     std::cout << "Processing file: " << filepath << std::endl;
 
-    parseInputFile(filepath, orders, setupTimes, initialSetupTimes);
+    parseInputFile(filepath, orders, setupTimes, initialSetupTimes); //Aqui, passamos o arquivo pelo parser, para extrair cada uma das informações do pedido
 
-    double totalPenaltyCost = 0.0;
-    auto start = std::chrono::high_resolution_clock::now();
+    double totalPenaltyCost = 0.0; //Inicializamos o custo de penalidade total em 0
+    auto start = std::chrono::high_resolution_clock::now(); //Começamos a contar o tempo de execução
 
-    std::random_device rd;
-    unsigned int seed = rd();
+    std::random_device rd; //Aqui inicializamos um random device
+    unsigned int seed = rd(); //Aqui criamos uma variavel seed, para usarmos no random e garantirmos que mesmo dentro de uma randomizacao os resultados tenham um padrao escolhido por nos
     std::mt19937 rng(seed);
 
 //    std::vector<int> schedule = {29, 57, 40, 54, 9, 10, 12, 19, 60, 50, 55, 15, 37, 34, 18, 16, 2, 8, 46, 51, 23, 44, 17, 20, 39, 26, 48, 41, 1, 25, 56, 58, 30, 21, 27, 28, 6, 36, 43, 3, 7, 45, 22, 13, 31, 42, 5, 14, 11, 49, 33, 47, 24, 35, 52, 32, 38, 4, 53, 59};
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
 
     // Perform ILS optimization with Adaptive RVND
-    std::vector<int> optimizedSchedule = GRASP(orders, setupTimes, initialSetupTimes, totalPenaltyCost, rng); //Here is where we are supposed to add the seed to get similar results
+    std::vector<int> optimizedSchedule = GRASP(orders, setupTimes, initialSetupTimes, totalPenaltyCost, rng); //Aqui chamamos a função GRASP, que acaba sendo a principal do algoritmo inteiro, por executar todas as operações dentro dela
 
     // Create a ScheduleData object and populate it with the optimized schedule
     ScheduleData scheduleData;

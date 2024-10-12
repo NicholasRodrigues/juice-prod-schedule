@@ -243,11 +243,11 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
                        double& totalPenaltyCost,
                        std::mt19937& rng)
 {
-    int maxIterations = GRASP_ITERATIONS;
-    std::vector<int> bestSolution;
-    double bestPenaltyCost = std::numeric_limits<double>::infinity();
+    int maxIterations = GRASP_ITERATIONS; //Define a quantidade maxima de iterações do GRASP, definimos como 10
+    std::vector<int> bestSolution; //Vetor que armazena a melhor solução de pedidos (ordem que os pedidos serão executados)
+    double bestPenaltyCost = std::numeric_limits<double>::infinity(); //Aqui inicializamos a melhor penalidade como infinito, assim, qualquer valor que inicialmente colocarmos vai ser menor que ele
 
-    int rclSize = orders.size() / 4;
+    int rclSize = orders.size() / 4; //Define o tamanho da lista restrita de candidatos (RCL) como 1/4 do tamanho do vetor de pedidos
 
     std::vector<Order> sortedOrders = orders;
     std::sort(sortedOrders.begin(), sortedOrders.end(), [](const Order& a, const Order& b) {
