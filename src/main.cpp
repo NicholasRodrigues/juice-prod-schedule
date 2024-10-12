@@ -7,6 +7,14 @@
 #include "schedule_data.h"
 #include <random>
 
+// #include <sys/resource.h>
+
+// void printMemoryUsage() {
+//     struct rusage usage;
+//     getrusage(RUSAGE_SELF, &usage);
+//     std::cout << "Maximum resident set size: " << usage.ru_maxrss << " kilobytes" << std::endl;
+// }
+
 namespace fs = std::filesystem;
 
 int main(int argc, char *argv[])
@@ -68,7 +76,7 @@ int main(int argc, char *argv[])
 
 
     // Perform ILS optimization with Adaptive RVND
-    std::vector<int> optimizedSchedule = GRASP(orders, setupTimes, initialSetupTimes, totalPenaltyCost, rng); //Here is where we are supposed to add the seed to get similar results
+    std::vector<int> optimizedSchedule = GRASP(orders, setupTimes, initialSetupTimes, totalPenaltyCost, rng);
 
     // Create a ScheduleData object and populate it with the optimized schedule
     ScheduleData scheduleData;
@@ -91,9 +99,13 @@ int main(int argc, char *argv[])
     std::cout << "EXECUTION_TIME: " << elapsed.count() << std::endl;
 
     double optimalPenalty = optimalPenalties[instanceName];
-    double gap = ((scheduleData.totalPenalty - optimalPenalty) / optimalPenalty) * 100;
-    std::cout << "GAP_OPTIMIZED: " << gap << "%" << std::endl;
+    if (optimalPenalty > 0) { // Avoid division by zero
+        double gap = ((scheduleData.totalPenalty - optimalPenalty) / optimalPenalty) * 100;
+        std::cout << "GAP_OPTIMIZED: " << gap << "%" << std::endl;
+    }
 
+    // Print the seed used
+    std::cout << "SEED_USED: " << seed << std::endl;
 
     return 0;
 }

@@ -46,6 +46,16 @@ struct pair_hash
     }
 };
 
+struct TaskPriority {
+    int taskId;
+    double priority;
+
+    // Custom comparator to use priority queue as a max-heap
+    bool operator<(const TaskPriority& other) const {
+        return priority < other.priority; // Higher priority tasks should come first
+    }
+};
+
 // Function declarations
 double calculatePriority(const Order &order, int setupTime);
 

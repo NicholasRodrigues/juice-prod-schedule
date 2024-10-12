@@ -49,3 +49,23 @@ n60O - Best Penalty: 1000000000, Best GAP: 1000000000%, Execution Time: 10000000
 n60P - Best Penalty: 1000000000, Best GAP: 1000000000%, Execution Time: 1000000000 seconds
 n60A - Best Penalty: 471, Best GAP: 3.97351%, Execution Time: 455.055 seconds
 n60B - Best Penalty: 2083, Best GAP: 18.5544%, Execution Time: 358.864 seconds
+n60A - Best Penalty: 468, Best GAP: %, Execution Time: 229.589 seconds, Seed: 
+n60B - Best Penalty: 1783, Best GAP: %, Execution Time: 291.542 seconds, Seed: 
+n60C - Best Penalty: 0, Best GAP: %, Execution Time: 9.29832 seconds, Seed: 
+n60D - Best Penalty: 69102, Best GAP: %, Execution Time: 219.077 seconds, Seed: 
+n60E - Best Penalty: 58935, Best GAP: %, Execution Time: 243.516 seconds, Seed: 
+n60F - Best Penalty: 93045, Best GAP: %, Execution Time: 231.285 seconds, Seed: 
+n60G - Best Penalty: 71118, Best GAP: %, Execution Time: 258.904 seconds, Seed: 
+n60H - Best Penalty: 145007, Best GAP: %, Execution Time: 291.34 seconds, Seed: 
+n60I - Best Penalty: 43994, Best GAP: %, Execution Time: 358.13 seconds, Seed: 
+n60J - Best Penalty: 53555, Best GAP: %, Execution Time: 296.968 seconds, Seed: 
+n60K - Best Penalty: 458752, Best GAP: %, Execution Time: 242.428 seconds, Seed: 
+n60L - Best Penalty: 332941, Best GAP: %, Execution Time: 224.141 seconds, Seed: 
+n60M - Best Penalty: 517479, Best GAP: %, Execution Time: 260.128 seconds, Seed: 
+n60N - Best Penalty: 492572, Best GAP: %, Execution Time: 232.047 seconds, Seed: 
+n60O - Best Penalty: 530601, Best GAP: %, Execution Time: 215.948 seconds, Seed: 
+n60P - Best Penalty: 396183, Best GAP: %, Execution Time: 256.685 seconds, Seed: 
+n60A - Best Penalty: 462, Best GAP: 1.98675%, Execution Time: 172.88 seconds, Seed: 2226910266
+n60B - Best Penalty: 1783, Best GAP: 1.4798%, Execution Time: 182.986 seconds, Seed: 3773970577
+n60C - Best Penalty: 0, Best GAP: %, Execution Time: 6.97139 seconds, Seed: 904000712
+n60D - Best Penalty: 69102, Best GAP: 0%, Execution Time: 257.82 seconds, Seed: 1652472052
