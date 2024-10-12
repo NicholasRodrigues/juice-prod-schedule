@@ -144,10 +144,64 @@ double calculateMaxPenalty(const std::vector<int>& schedule, const std::vector<O
 
 
 // New greedy algorithm considering both due date, penalty rate, and setup time (dynamic)
+//std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
+//                                 const std::vector<std::vector<int>> &setupTimes,
+//                                 const std::vector<int> &initialSetupTimes,
+//                                 double &totalPenaltyCost)
+//{
+//    int n = orders.size();
+//    std::vector<bool> scheduled(n, false); // Track which jobs have been scheduled
+//    std::vector<int> schedule;
+//    int currentTime = 0;
+//    int currentTask = -1;
+//    totalPenaltyCost = 0.0;
+//
+//    for (int count = 0; count < n; ++count)
+//    {
+//        int bestTask = -1;
+//        double bestPriority = -1.0;
+//
+//        for (int i = 0; i < n; ++i)
+//        {
+//            if (scheduled[i])
+//                continue; // Skip jobs that are already scheduled
+//
+//            // Calculate setup time dynamically (from last scheduled task)
+//            int setupTime = (currentTask >= 0) ? setupTimes[currentTask][i] : initialSetupTimes[i];
+//
+//            // Calculate the priority for this job
+//            double priority = calculatePriority(orders[i], setupTime);
+//
+//            if (bestTask == -1 || priority > bestPriority)
+//            {
+//                bestTask = i;
+//                bestPriority = priority;
+//            }
+//        }
+//
+//        // Schedule the best task found
+//        scheduled[bestTask] = true;
+//        schedule.push_back(bestTask);
+//
+//        int setupTime = (currentTask >= 0) ? setupTimes[currentTask][bestTask] : initialSetupTimes[bestTask];
+//        currentTime += setupTime + orders[bestTask].processingTime;
+//
+//        if (currentTime > orders[bestTask].dueTime)
+//        {
+//            double penalty = orders[bestTask].penaltyRate * (currentTime - orders[bestTask].dueTime);
+//            totalPenaltyCost += penalty;
+//        }
+//
+//        currentTask = bestTask;
+//    }
+//
+//    return schedule;
+//}
+
 std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
-                                 const std::vector<std::vector<int>> &setupTimes,
-                                 const std::vector<int> &initialSetupTimes,
-                                 double &totalPenaltyCost)
+                                     const std::vector<std::vector<int>> &setupTimes,
+                                     const std::vector<int> &initialSetupTimes,
+                                     double &totalPenaltyCost)
 {
     int n = orders.size();
     std::vector<bool> scheduled(n, false); // Track which jobs have been scheduled
@@ -156,43 +210,58 @@ std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
     int currentTask = -1;
     totalPenaltyCost = 0.0;
 
-    for (int count = 0; count < n; ++count)
+    // Priority queue to pick the task with the best priority
+    std::priority_queue<TaskPriority> taskQueue;
+
+    // Initially calculate the priority for all tasks and push them into the priority queue
+    for (int i = 0; i < n; ++i)
     {
-        int bestTask = -1;
-        double bestPriority = -1.0;
+        int setupTime = initialSetupTimes[i]; // Initial setup times
+        double priority = calculatePriority(orders[i], setupTime);
+        taskQueue.push({i, priority});
+    }
 
-        for (int i = 0; i < n; ++i)
-        {
-            if (scheduled[i])
-                continue; // Skip jobs that are already scheduled
+    while (!taskQueue.empty())
+    {
+        // Get the task with the highest priority
+        TaskPriority bestTask = taskQueue.top();
+        taskQueue.pop();
 
-            // Calculate setup time dynamically (from last scheduled task)
-            int setupTime = (currentTask >= 0) ? setupTimes[currentTask][i] : initialSetupTimes[i];
-
-            // Calculate the priority for this job
-            double priority = calculatePriority(orders[i], setupTime);
-
-            if (bestTask == -1 || priority > bestPriority)
-            {
-                bestTask = i;
-                bestPriority = priority;
-            }
-        }
+        if (scheduled[bestTask.taskId])
+            continue; // Skip jobs that are already scheduled
 
         // Schedule the best task found
-        scheduled[bestTask] = true;
-        schedule.push_back(bestTask);
+        scheduled[bestTask.taskId] = true;
+        schedule.push_back(bestTask.taskId);
 
-        int setupTime = (currentTask >= 0) ? setupTimes[currentTask][bestTask] : initialSetupTimes[bestTask];
-        currentTime += setupTime + orders[bestTask].processingTime;
+        // Update current time and penalty
+        int setupTime = (currentTask >= 0) ? setupTimes[currentTask][bestTask.taskId] : initialSetupTimes[bestTask.taskId];
+        currentTime += setupTime + orders[bestTask.taskId].processingTime;
 
-        if (currentTime > orders[bestTask].dueTime)
+        if (currentTime > orders[bestTask.taskId].dueTime)
         {
-            double penalty = orders[bestTask].penaltyRate * (currentTime - orders[bestTask].dueTime);
+            double penalty = orders[bestTask.taskId].penaltyRate * (currentTime - orders[bestTask.taskId].dueTime);
             totalPenaltyCost += penalty;
         }
 
-        currentTask = bestTask;
+        currentTask = bestTask.taskId;
+
+        // Update the priorities of unscheduled tasks in the queue based on the new currentTask
+        std::priority_queue<TaskPriority> newQueue;
+        while (!taskQueue.empty())
+        {
+            TaskPriority task = taskQueue.top();
+            taskQueue.pop();
+
+            if (!scheduled[task.taskId])
+            {
+                // Recalculate the priority based on the new current task
+                int newSetupTime = setupTimes[currentTask][task.taskId];
+                task.priority = calculatePriority(orders[task.taskId], newSetupTime);
+                newQueue.push(task);
+            }
+        }
+        taskQueue = newQueue; // Replace the old queue with the updated one
     }
 
     return schedule;
@@ -249,35 +318,58 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
 
     int rclSize = orders.size() / 4;
 
-    std::vector<Order> sortedOrders = orders;
-    std::sort(sortedOrders.begin(), sortedOrders.end(), [](const Order& a, const Order& b) {
-        return a.dueTime < b.dueTime;
-    });
-
     for (int iter = 0; iter < maxIterations; ++iter) {
         std::vector<int> newSchedule;
-        int n = sortedOrders.size();
+        int n = orders.size();
 
-        // Initialize ordersPoolIndices with indices to sortedOrders
-        std::vector<int> ordersPoolIndices(n);
-        std::iota(ordersPoolIndices.begin(), ordersPoolIndices.end(), 0);
+        // Priority queue for greedy task selection, based on dynamic priorities
+        std::priority_queue<TaskPriority> taskQueue;
 
-        while (!ordersPoolIndices.empty()) {
-            int rclSizeLimited = std::min(rclSize, static_cast<int>(ordersPoolIndices.size()));
+        // Add all tasks to the priority queue based on their initial setup times
+        for (int i = 0; i < n; ++i) {
+            int setupTime = initialSetupTimes[i];
+            double priority = calculatePriority(orders[i], setupTime);
+            taskQueue.push({i, priority});
+        }
 
-            // Randomly select an index from the first rclSizeLimited indices using the passed RNG
-            std::uniform_int_distribution<int> distribution(0, rclSizeLimited - 1);
-            int rclIndex = distribution(rng);  // Use RNG here
-            int selectedIndex = ordersPoolIndices[rclIndex];
+        // List to track scheduled tasks
+        std::vector<bool> scheduled(n, false);
+        int currentTask = -1;
+        int currentTime = 0;
 
-            const Order& selectedOrder = sortedOrders[selectedIndex];
+        while (!taskQueue.empty()) {
+            // Build Restricted Candidate List (RCL) from top RCL_SIZE tasks in the heap
+            std::vector<TaskPriority> rcl;
+            for (int i = 0; i < rclSize && !taskQueue.empty(); ++i) {
+                rcl.push_back(taskQueue.top());
+                taskQueue.pop();
+            }
 
-            // Add selected order to the new schedule
-            newSchedule.push_back(selectedOrder.id);
+            // Randomly select a task from the RCL
+            std::uniform_int_distribution<int> distribution(0, rcl.size() - 1);
+            int rclIndex = distribution(rng);
+            int selectedTaskId = rcl[rclIndex].taskId;
 
-            // Remove selectedIndex from ordersPoolIndices
-            std::swap(ordersPoolIndices[rclIndex], ordersPoolIndices.back());
-            ordersPoolIndices.pop_back();
+            // Schedule the selected task
+            newSchedule.push_back(selectedTaskId);
+            scheduled[selectedTaskId] = true;
+
+            // Update current time and penalties based on the selected task
+            int setupTime = (currentTask >= 0) ? setupTimes[currentTask][selectedTaskId] : initialSetupTimes[selectedTaskId];
+            currentTime += setupTime + orders[selectedTaskId].processingTime;
+
+            // Recalculate priorities for unscheduled tasks and repopulate the heap
+            std::priority_queue<TaskPriority> newQueue;
+            for (int i = 0; i < n; ++i) {
+                if (!scheduled[i]) {
+                    int newSetupTime = (currentTask >= 0) ? setupTimes[currentTask][i] : initialSetupTimes[i];
+                    double newPriority = calculatePriority(orders[i], newSetupTime);
+                    newQueue.push({i, newPriority});
+                }
+            }
+            taskQueue = std::move(newQueue); // Replace the old heap with the updated one
+
+            currentTask = selectedTaskId;
         }
 
         // Compute the penalty cost for the new schedule before ILS
@@ -314,7 +406,6 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
     totalPenaltyCost = bestPenaltyCost;
     return bestSolution;
 }
-
 
 
 // std::vector<int> adaptiveRVND(std::vector<int>& schedule, const std::vector<Order>& orders,
