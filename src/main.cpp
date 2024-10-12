@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
 
     // Perform ILS optimization with Adaptive RVND
-    std::vector<int> optimizedSchedule = GRASP(orders, setupTimes, initialSetupTimes, totalPenaltyCost, rng);
+    std::vector<int> optimizedSchedule = GRASP(orders, setupTimes, initialSetupTimes, totalPenaltyCost, rng); //Here is where we are supposed to add the seed to get similar results
 
     // Create a ScheduleData object and populate it with the optimized schedule
     ScheduleData scheduleData;
