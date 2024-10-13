@@ -348,13 +348,14 @@ void adaptiveRVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
                   const std::vector<std::vector<int>>& setupTimes,
                   const std::vector<int>& initialSetupTimes, std::mt19937& rng)
 {
-    std::vector<std::function<bool(ScheduleData&, const std::vector<Order>&,
-    const std::vector<std::vector<int>> &,
-    const std::vector<int>&)>> neighborhoods = {
-            reinsertionNeighborhood,
-            swapNeighborhood,
-            twoOptNeighborhood
-    };
+    std::unordered_map<std::vector<int>, double, VectorHash> taboo;
+std::vector<std::function<bool(ScheduleData&, const std::vector<Order>&,
+const std::vector<std::vector<int>> &,
+const std::vector<int>&, std::unordered_map<std::vector<int>, double, VectorHash>&)>> neighborhoods = {
+        reinsertionNeighborhood,
+        swapNeighborhood,
+        twoOptNeighborhood
+};
 
     bool improvement = true;
 
@@ -367,7 +368,7 @@ void adaptiveRVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
         {
             // Generate a neighbor using the current neighborhood
             ScheduleData neighborScheduleData = scheduleData; // Create a copy to test the move
-            bool moved = neighborhood(neighborScheduleData, orders, setupTimes, initialSetupTimes);
+            bool moved = neighborhood(neighborScheduleData, orders, setupTimes, initialSetupTimes, taboo);
 
             if (moved)
             {
