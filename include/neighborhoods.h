@@ -98,5 +98,9 @@ void updateScheduleDataTwoOpt(ScheduleData &scheduleData, const std::vector<Orde
                               const std::vector<int> &initialSetupTimes,
                               int i, int j);
 
-
+double calculateDeltaPenalty(const ScheduleData &scheduleData,
+                             const std::vector<Order> &orders,
+                             const std::vector<std::vector<int>> &setupTimes,
+                             const std::vector<int> &initialSetupTimes,
+                             int i, int j, int l);
 #endif // NEIGHBORHOODS_H

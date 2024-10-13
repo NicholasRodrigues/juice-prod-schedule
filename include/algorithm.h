@@ -71,6 +71,7 @@ void calculateTotalPenalty(ScheduleData &scheduleData, const std::vector<Order> 
                            const std::vector<std::vector<int>> &setupTimes,
                            const std::vector<int> &initialSetupTimes);
 
+
 double calculateMaxPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
                            const std::vector<std::vector<int>>& setupTimes,
                            const std::vector<int>& initialSetupTimes);

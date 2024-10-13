@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     auto start = std::chrono::high_resolution_clock::now();
 
     std::random_device rd;
-    unsigned int seed = rd();
+    unsigned int seed = 2105631006;
     std::mt19937 rng(seed);
 
 //    std::vector<int> schedule = {29, 57, 40, 54, 9, 10, 12, 19, 60, 50, 55, 15, 37, 34, 18, 16, 2, 8, 46, 51, 23, 44, 17, 20, 39, 26, 48, 41, 1, 25, 56, 58, 30, 21, 27, 28, 6, 36, 43, 3, 7, 45, 22, 13, 31, 42, 5, 14, 11, 49, 33, 47, 24, 35, 52, 32, 38, 4, 53, 59};
@@ -98,8 +98,7 @@ int main(int argc, char *argv[])
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "EXECUTION_TIME: " << elapsed.count() << std::endl;
 
-    double optimalPenalty = optimalPenalties[instanceName];
-    if (optimalPenalty > 0) { // Avoid division by zero
+    if (double optimalPenalty = optimalPenalties[instanceName]; optimalPenalty > 0) { // Avoid division by zero
         double gap = ((scheduleData.totalPenalty - optimalPenalty) / optimalPenalty) * 100;
         std::cout << "GAP_OPTIMIZED: " << gap << "%" << std::endl;
     }
