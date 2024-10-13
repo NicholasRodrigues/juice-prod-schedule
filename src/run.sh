@@ -76,7 +76,7 @@ for instance in "$DATA_DIR"/*.txt; do
     echo "$(date +'%Y-%m-%d %H:%M:%S') - Temporary directory created at $tmp_dir" | tee -a "$LOG_FILE"
 
     # Ensure temporary directory is removed on script exit or interruption
-    trap 'rm -rf "$tmp_dir"; echo "$(date +'%Y-%m-%d %H:%M:%S') - Temporary directory $tmp_dir removed due to interruption." | tee -a "$LOG_FILE"; exit 1' INT TERM
+    trap 'rm -rf "$tmp_dir"; echo "$(date +"%Y-%m-%d %H:%M:%S") - Temporary directory $tmp_dir removed due to interruption." | tee -a "$LOG_FILE"; exit 1' INT TERM
 
     # Run 10 runs in parallel using GNU Parallel
     # Ensure GNU Parallel is installed: sudo apt-get install parallel
