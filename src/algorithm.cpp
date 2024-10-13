@@ -69,7 +69,7 @@ void calculateTotalPenalty(ScheduleData &scheduleData, const std::vector<Order> 
 
     for (size_t i = 0; i < n; ++i)
     {
-        int taskId = scheduleData.schedule[i];
+        const int taskId = scheduleData.schedule[i];
         const Order &order = orders[taskId];
 
         int setupTime = 0;
@@ -117,7 +117,7 @@ std::vector<int> greedyConstruction(const std::vector<Order> &orders,
                                     int rclSize,
                                     std::mt19937* rng)
 {
-    int n = orders.size();
+    const int n = orders.size();
     std::vector<int> schedule;
     std::vector<bool> scheduled(n, false);
     int currentTask = -1;
@@ -127,7 +127,7 @@ std::vector<int> greedyConstruction(const std::vector<Order> &orders,
     unscheduledTasks.reserve(n);
     for (int i = 0; i < n; ++i)
     {
-        double priority = calculatePriority(orders[i], initialSetupTimes[i]);
+        const double priority = calculatePriority(orders[i], initialSetupTimes[i]);
         unscheduledTasks.push_back(TaskPriority{i, priority});
     }
 
@@ -136,7 +136,7 @@ std::vector<int> greedyConstruction(const std::vector<Order> &orders,
         std::vector<TaskPriority> rcl;
 
         // Determine the actual RCL size based on remaining tasks
-        int actualRCLSize = std::min(rclSize, static_cast<int>(unscheduledTasks.size()));
+        const int actualRCLSize = std::min(rclSize, static_cast<int>(unscheduledTasks.size()));
 
         // Find the top rclSize tasks
         std::partial_sort(unscheduledTasks.begin(),
@@ -157,7 +157,7 @@ std::vector<int> greedyConstruction(const std::vector<Order> &orders,
         if (useRCL && rng != nullptr && !rcl.empty())
         {
             std::uniform_int_distribution<int> distribution(0, rcl.size() - 1);
-            int rclIndex = distribution(*rng);
+            const int rclIndex = distribution(*rng);
             selectedTaskId = rcl[rclIndex].taskId;
         }
         else
@@ -181,7 +181,7 @@ std::vector<int> greedyConstruction(const std::vector<Order> &orders,
         // Recalculate priorities for the remaining unscheduled tasks
         for(auto &tp : unscheduledTasks)
         {
-            int newSetupTime = setupTimes[currentTask][tp.taskId];
+            const int newSetupTime = setupTimes[currentTask][tp.taskId];
             tp.priority = calculatePriority(orders[tp.taskId], newSetupTime);
         }
     }
@@ -189,75 +189,6 @@ std::vector<int> greedyConstruction(const std::vector<Order> &orders,
     return schedule;
 }
 
-/**
- * Implements the greedy algorithm for scheduling.
- *
- * @param orders             Vector of orders.
- * @param setupTimes         Matrix of setup times between tasks.
- * @param initialSetupTimes  Vector of initial setup times.
- * @param totalPenaltyCost   Reference to store the total penalty cost.
- * @return                   Constructed schedule as a vector of task IDs.
- */
-std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
-                                 const std::vector<std::vector<int>> &setupTimes,
-                                 const std::vector<int> &initialSetupTimes,
-                                 double &totalPenaltyCost)
-{
-    // Construct schedule using pure greedy selection (RCL size = 1)
-    std::vector<int> schedule = greedyConstruction(orders, setupTimes, initialSetupTimes, false, 1, nullptr);
-
-    // Calculate total penalty cost based on the schedule
-    ScheduleData scheduleData;
-    scheduleData.schedule = schedule;
-    calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
-    totalPenaltyCost = scheduleData.totalPenalty;
-
-    return schedule;
-}
-
-/**
- * Calculates the total penalty for a given schedule.
- *
- * @param schedule       The schedule to evaluate.
- * @param orders         Vector of orders.
- * @param setupTimes     Matrix of setup times between tasks.
- * @param initialSetupTimes   Vector of initial setup times.
- * @return               The total penalty cost.
- */
-double calculateTotalPenaltyForSchedule(const std::vector<int>& schedule,
-                                        const std::vector<Order>& orders,
-                                        const std::vector<std::vector<int>>& setupTimes,
-                                        const std::vector<int>& initialSetupTimes) {
-    double totalPenalty = 0.0;
-    int currentTime = 0;
-    int currentTask = -1;
-
-    for (int i = 0; i < schedule.size(); ++i) {
-        int taskId = schedule[i] - 1;
-
-        // Ensure taskId is valid
-        if (taskId < 0 || taskId >= orders.size()) {
-            std::cerr << "Invalid taskId: " << taskId << std::endl;
-            return -1;
-        }
-
-        const Order& order = orders[taskId];
-
-        int setupTime = (currentTask >= 0) ? setupTimes[currentTask][taskId] : initialSetupTimes[taskId];
-
-        currentTime += setupTime + order.processingTime;
-
-        if (currentTime > order.dueTime) {
-            double penalty = order.penaltyRate * (currentTime - order.dueTime);
-            totalPenalty += penalty;
-        }
-
-        currentTask = taskId;
-    }
-
-    std::cout << "Total penalty for the schedule: " << totalPenalty << std::endl;
-    return totalPenalty;
-}
 
 /**
  * Implements the GRASP metaheuristic for scheduling.
@@ -275,12 +206,12 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
                        double& totalPenaltyCost,
                        std::mt19937& rng)
 {
-    int maxIterations = GRASP_ITERATIONS;
+    constexpr int maxIterations = GRASP_ITERATIONS;
     std::vector<int> bestSolution;
     double bestPenaltyCost = std::numeric_limits<double>::infinity();
 
     // Define RCL size (e.g., top 25% of candidates)
-    int rclSize = std::max(1, static_cast<int>(orders.size() / 4));
+    const int rclSize = std::max(1, static_cast<int>(orders.size() / 4));
 
     for (int iter = 0; iter < maxIterations; ++iter)
     {
@@ -300,10 +231,9 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
         ScheduleData improvedScheduleData;
         improvedScheduleData.schedule = newSchedule;
         calculateTotalPenalty(improvedScheduleData, orders, setupTimes, initialSetupTimes);
-        double improvedPenaltyCost = improvedScheduleData.totalPenalty;
 
         // Update best solution if improvement is found
-        if (improvedPenaltyCost < bestPenaltyCost)
+        if (const double improvedPenaltyCost = improvedScheduleData.totalPenalty; improvedPenaltyCost < bestPenaltyCost)
         {
             bestSolution = newSchedule;
             bestPenaltyCost = improvedPenaltyCost;
@@ -368,9 +298,8 @@ void adaptiveRVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
         {
             // Generate a neighbor using the current neighborhood
             ScheduleData neighborScheduleData = scheduleData; // Create a copy to test the move
-            bool moved = neighborhood(neighborScheduleData, orders, setupTimes, initialSetupTimes, taboo);
 
-            if (moved)
+            if (bool moved = neighborhood(neighborScheduleData, orders, setupTimes, initialSetupTimes, taboo))
             {
                 // Accept the move
                 scheduleData = std::move(neighborScheduleData);
@@ -392,7 +321,7 @@ void adaptiveRVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
  * @param rng      Random number generator.
  */
 void perturbSolution(std::vector<int>& schedule, std::mt19937& rng) {
-    int n = schedule.size();
+    const int n = schedule.size();
     if (n < 8) return;
 
     // Apply Double Bridge move (diversification)

@@ -15,13 +15,12 @@ bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orde
     int best_i = -1, best_j = -1, best_l = -1;
     bool improvementFound = false;
     double bestPenalty = scheduleData.totalPenalty;
-    ScheduleData tempScheduleData;
 
     // Consider block sizes between 2 and 4
     for (int l = 1; l <= 10; ++l) {
         for (int i = 0; i <= n - 2 * l; ++i) {
             for (int j = i + l; j <= n - l; ++j) {
-                tempScheduleData = scheduleData;
+                ScheduleData tempScheduleData = scheduleData;
 
                 // Perform block exchange in the temporary schedule
                 std::swap_ranges(tempScheduleData.schedule.begin() + i, tempScheduleData.schedule.begin() + i + l,
@@ -71,8 +70,6 @@ bool reinsertionNeighborhood(ScheduleData &scheduleData, const std::vector<Order
     bool improvementFound = false;
     double bestPenalty = scheduleData.totalPenalty;
 
-    ScheduleData tempScheduleData;
-
     // Consider block sizes from 1 to 5
     for (int l = 1; l <= 10; ++l)
     {
@@ -82,7 +79,7 @@ bool reinsertionNeighborhood(ScheduleData &scheduleData, const std::vector<Order
             {
                 if (j >= i && j <= i + l - 1) continue;  // Skip overlapping positions
 
-                tempScheduleData = scheduleData;
+                ScheduleData tempScheduleData = scheduleData;
 
                 // Perform block shift in the temporary schedule
                 std::vector<int> block(tempScheduleData.schedule.begin() + i, tempScheduleData.schedule.begin() + i + l);
@@ -151,13 +148,11 @@ bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &or
     bool improvementFound = false;
     double bestPenalty = scheduleData.totalPenalty;
 
-    ScheduleData tempScheduleData;
-
     for (int i = 0; i < n - 1; ++i) {
         // Limit j to ensure the block size does not exceed 10
-        int max_j = std::min(n - 1, i + 4); // i + 9 ensures block size <= 10
+        const int max_j = std::min(n - 1, i + 4); // i + 9 ensures block size <= 10
         for (int j = i + 1; j <= max_j; ++j) {
-            tempScheduleData = scheduleData;
+            ScheduleData tempScheduleData = scheduleData;
 
             // Apply the 2-opt move in the temporary schedule
             std::reverse(tempScheduleData.schedule.begin() + i, tempScheduleData.schedule.begin() + j + 1);

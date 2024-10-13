@@ -9,9 +9,9 @@
 struct VectorHash {
     std::size_t operator()(const std::vector<int>& vec) const {
         std::size_t hash = 0;
-        std::hash<int> hasher;  // Standard hash function for integers
         // Combine the hash of each element
-        for (int v : vec) {
+        for (const int v : vec) {
+            std::hash<int> hasher;
             hash ^= hasher(v) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
         }
         return hash;
