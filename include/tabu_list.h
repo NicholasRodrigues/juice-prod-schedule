@@ -5,33 +5,37 @@
 #include <unordered_set>
 
 struct TabuList {
-    std::queue<size_t> tabuQueue;       // FIFO queue for Tabu List
-    std::unordered_set<size_t> tabuSet; // O(1) lookup of Tabu solutions
-    int maxSize;                        // Maximum length of the tabu list
+    std::unordered_set<size_t> tabuSet; // For O(1) lookup
+    std::vector<size_t> tabuBuffer;      // Circular buffer
+    int maxSize;
+    int currentIndex;
 
-    TabuList(int maxSize) : maxSize(maxSize) {}
-
-    // Add a new solution to the Tabu List
-    void addSolution(size_t hash) {
-        if (tabuSet.size() >= maxSize) {
-            size_t oldHash = tabuQueue.front();
-            tabuQueue.pop();
-            tabuSet.erase(oldHash);
-        }
-        tabuQueue.push(hash);
-        tabuSet.insert(hash);
+    TabuList(int maxSize) : maxSize(maxSize), currentIndex(0) {
+        tabuBuffer.reserve(maxSize);
     }
 
-    // Check if a solution is in the Tabu List
+    void addSolution(size_t hash) {
+        if (tabuBuffer.size() < maxSize) {
+            tabuBuffer.push_back(hash);
+            tabuSet.insert(hash);
+        }
+        else {
+            size_t oldHash = tabuBuffer[currentIndex];
+            tabuSet.erase(oldHash);
+            tabuBuffer[currentIndex] = hash;
+            tabuSet.insert(hash);
+            currentIndex = (currentIndex + 1) % maxSize;
+        }
+    }
+
     bool isTabu(size_t hash) const {
         return tabuSet.find(hash) != tabuSet.end();
     }
 
-    // Clear the Tabu List
     void clear() {
-        std::queue<size_t> emptyQueue;
-        std::swap(tabuQueue, emptyQueue);
         tabuSet.clear();
+        tabuBuffer.clear();
+        currentIndex = 0;
     }
 };
 

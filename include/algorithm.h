@@ -11,11 +11,11 @@
 // Constants
 constexpr double IMPROVEMENT_THRESHOLD = 1.0;
 constexpr int MAX_NO_IMPROVEMENT_ITERATIONS = 240;
-constexpr int PERTURBATION_STRENGTH_MIN = 1;
-constexpr int PERTURBATION_STRENGTH_MAX = 57;
 void printImprovementStatistics();
 constexpr int GRASP_ITERATIONS = 10;
 constexpr int RCL_SIZE = 15;
+constexpr int TABU_TENURE = 100;
+constexpr int MAX_TABU_LIST_SIZE = 1000;
 
 // algorithm.h
 extern int swap_improvement_count;
@@ -87,7 +87,7 @@ void adaptiveShuffle(
     std::vector<double> &neighborhoodWeights,
     std::mt19937 &g);
 
-void perturbSolution(std::vector<int>& schedule, int perturbationStrength, std::mt19937& rng);
+void perturbSolution(std::vector<int>& schedule, std::mt19937& rng);
 
 std::vector<int> ILS(const std::vector<int>& initialSchedule,
                      const std::vector<Order>& orders,
@@ -95,4 +95,11 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule,
                      const std::vector<int>& initialSetupTimes,
                      double& currentPenaltyCost,
                      std::mt19937& rng);
+
+std::vector<int> greedyConstruction(const std::vector<Order> &orders,
+                                    const std::vector<std::vector<int>> &setupTimes,
+                                    const std::vector<int> &initialSetupTimes,
+                                    bool useRCL,
+                                    int rclSize,
+                                    std::mt19937* rng);
 #endif // ALGORITHM_H
