@@ -23,7 +23,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="14db4b1e-ff0d-4ad8-abf8-70b073827e40" name="Changes" comment="" />
+    <list default="true" id="14db4b1e-ff0d-4ad8-abf8-70b073827e40" name="Changes" comment="dear lord, please have mercy" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -32,32 +32,16 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file:///Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/usr/include/c++/v1/vector" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/include/algorithm.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/include/neighborhoods.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/include/parser.h" root0="FORCE_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/algorithm.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/algorithm.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/algorithm.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/algorithm.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/algorithm.cpp" root0="FORCE_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/algorithm.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/algorithm.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/algorithm.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/algorithm.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/algorithm.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/algorithm.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/main.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/main.cpp" root0="FORCE_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/main.cpp" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/neighborhoods.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/neighborhoods.cpp" root0="FORCE_HIGHLIGHTING" />
-    <setting file="mock:///Users/felipeduarte/Documents/juice-prod-schedule/src/neighborhoods.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/parser.cpp" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="ProblemsViewState">
@@ -99,16 +83,12 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="\\wsl$\Ubuntu\home\nicholas-ubuntu\Dev\APeA\juice-prod-schedule\include" />
       <recent name="$PROJECT_DIR$/data" />
     </key>
   </component>
   <component name="RunManager">
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="juice_prod_schedule" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="juice_prod_schedule" TARGET_NAME="juice_prod_schedule" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="juice_prod_schedule" RUN_TARGET_NAME="juice_prod_schedule">
+    <configuration name="juice_prod_schedule" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="juice_prod_schedule" TARGET_NAME="juice_prod_schedule" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="juice_prod_schedule" RUN_TARGET_NAME="juice_prod_schedule">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -147,6 +127,17 @@
     <isAutomaticCheckingOnLaunch value="false" />
     <isAutomaticFoundErrors value="true" />
     <isAutomaticReloadCMake value="true" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
