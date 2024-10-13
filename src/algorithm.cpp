@@ -268,7 +268,32 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
     totalPenaltyCost = bestPenaltyCost;
     return bestSolution;
 }
+void adaptiveRVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
+                  const std::vector<std::vector<int>>& setupTimes,
+                  const std::vector<int>& initialSetupTimes, std::mt19937& rng)
+{
+    std::vector<std::function<bool(ScheduleData&, const std::vector<Order>&,
+    const std::vector<std::vector<int>>&,
+    const std::vector<int>&)>> neighborhoods = {
+        blockExchangeNeighborhood,
+        blockShiftNeighborhood,
+        twoOptNeighborhood
+};
 
+    bool improvement = true;
+
+    while (improvement) {
+        improvement = false;
+        std::shuffle(neighborhoods.begin(), neighborhoods.end(), rng);  // Use the given RNG
+
+        for (const auto& neighborhood : neighborhoods) {
+            if (neighborhood(scheduleData, orders, setupTimes, initialSetupTimes)) {
+                improvement = true;
+                break;
+            }
+        }
+    }
+}
 void perturbSolution(std::vector<int>& schedule, int perturbationStrength, std::mt19937& rng) {
     int n = schedule.size();
     if (n < 8) return;
@@ -311,8 +336,7 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule,
 {
     ScheduleData bestScheduleData;
     bestScheduleData.schedule = initialSchedule;
-    calculateTotalPenalty(bestScheduleData, orders, setupTimes, initialSetupTimes);
-    double bestPenalty = bestScheduleData.totalPenalty;
+    double bestPenalty = currentPenaltyCost;
 
     ScheduleData currentScheduleData = bestScheduleData;
     int noImprovementCounter = 0;
