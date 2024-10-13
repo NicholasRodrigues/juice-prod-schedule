@@ -1,23 +1,35 @@
 #include "neighborhoods.h"
 #include "algorithm.h"
-#include <algorithm>
 #include <set>
 #include <iostream>
 #include "schedule_data.h"
+#include <vector>
+#include <unordered_map>
+#include <functional>
 
+struct VectorHash {
+    std::size_t operator()(const std::vector<int>& vec) const {
+        std::size_t hash = 0;
+        std::hash<int> hasher;  // Standard hash function for integers
 
+        // Combine the hash of each element
+        for (int v : vec) {
+            hash ^= hasher(v) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+        }
+        return hash;
+    }
+};
 // swap Neighborhood (Exchanges two blocks or single jobs in the schedule)
 bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
-                               const std::vector<std::vector<int>> &setupTimes,
-                               const std::vector<int> &initialSetupTimes) {
-
+                      const std::vector<std::vector<int>> &setupTimes,
+                      const std::vector<int> &initialSetupTimes) {
     int n = scheduleData.schedule.size();
     int best_i = -1, best_j = -1, best_l = -1;
     bool improvementFound = false;
     double bestPenalty = scheduleData.totalPenalty;
-
+    std::unordered_map<std::vector<int>, double, VectorHash> taboo;
     ScheduleData tempScheduleData;
-
+    double newPenalty = 0.0;
     // Consider block sizes between 2 and 4
     for (int l = 1; l <= 10; ++l) {
         for (int i = 0; i <= n - 2 * l; ++i) {
