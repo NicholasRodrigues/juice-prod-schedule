@@ -221,7 +221,7 @@ std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
  * @param schedule       The schedule to evaluate.
  * @param orders         Vector of orders.
  * @param setupTimes     Matrix of setup times between tasks.
- * @param initialSetup   Vector of initial setup times.
+ * @param initialSetupTimes   Vector of initial setup times.
  * @return               The total penalty cost.
  */
 double calculateTotalPenaltyForSchedule(const std::vector<int>& schedule,
