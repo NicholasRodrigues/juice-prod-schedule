@@ -9,13 +9,12 @@
 // swap Neighborhood (Exchanges two blocks or single jobs in the schedule)
 bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
                                const std::vector<std::vector<int>> &setupTimes,
-                               const std::vector<int> &initialSetupTimes) {
+                               const std::vector<int> &initialSetupTimes, std::unordered_map<std::vector<int>, double, VectorHash> &taboo) {
 
     int n = scheduleData.schedule.size();
     int best_i = -1, best_j = -1, best_l = -1;
     bool improvementFound = false;
     double bestPenalty = scheduleData.totalPenalty;
-
     ScheduleData tempScheduleData;
 
     // Consider block sizes between 2 and 4
@@ -28,16 +27,21 @@ bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orde
                 std::swap_ranges(tempScheduleData.schedule.begin() + i, tempScheduleData.schedule.begin() + i + l,
                                  tempScheduleData.schedule.begin() + j);
 
-                // Recalculate total penalty for the temporary schedule
+                if (taboo.find(tempScheduleData.schedule) != taboo.end()) { //checks if it exists in the taboo list
+                    continue;
+                }
                 calculateTotalPenalty(tempScheduleData, orders, setupTimes, initialSetupTimes);
-                double newPenalty = tempScheduleData.totalPenalty;
-
-                if (newPenalty < bestPenalty) {
+                if (const double newPenalty = tempScheduleData.totalPenalty; newPenalty == bestPenalty) {
+                    taboo[tempScheduleData.schedule] = newPenalty;
+                }
+                else if (newPenalty < bestPenalty) {
                     bestPenalty = newPenalty;
                     best_i = i;
                     best_j = j;
                     best_l = l;
                     improvementFound = true;
+                    taboo.clear();
+                    taboo[tempScheduleData.schedule] = newPenalty;
                 }
             }
         }
@@ -51,8 +55,6 @@ bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orde
         // Recalculate total penalty for the actual schedule
         calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
 
-        // Increment the improvement counter
-        block_exchange_improvement_count++;
         return true;
     }
 
@@ -62,7 +64,7 @@ bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orde
 // Reinsertion Neighborhood (Shifts a block of jobs, or a single one to another position)
 bool reinsertionNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
                             const std::vector<std::vector<int>> &setupTimes,
-                            const std::vector<int> &initialSetupTimes)
+                            const std::vector<int> &initialSetupTimes, std::unordered_map<std::vector<int>, double, VectorHash> &taboo)
 {
     int n = scheduleData.schedule.size();
     int best_i = -1, best_j = -1, best_l = -1;
@@ -95,18 +97,21 @@ bool reinsertionNeighborhood(ScheduleData &scheduleData, const std::vector<Order
 
                 tempScheduleData.schedule.insert(tempScheduleData.schedule.begin() + adjusted_j, block.begin(), block.end());
 
-                // Recalculate total penalty for the temporary schedule
+                if (taboo.find(tempScheduleData.schedule) != taboo.end()) { //checks if it exists in the taboo list
+                    continue;
+                }
                 calculateTotalPenalty(tempScheduleData, orders, setupTimes, initialSetupTimes);
-                double newPenalty = tempScheduleData.totalPenalty;
-
-                if (newPenalty < bestPenalty)
-                {
-                    block_shift_improvement_count++;
+                if (const double newPenalty = tempScheduleData.totalPenalty; newPenalty == bestPenalty) {
+                    taboo[tempScheduleData.schedule] = newPenalty;
+                }
+                else if (newPenalty < bestPenalty) {
                     bestPenalty = newPenalty;
                     best_i = i;
                     best_j = j;
                     best_l = l;
                     improvementFound = true;
+                    taboo.clear();
+                    taboo[tempScheduleData.schedule] = newPenalty;
                 }
             }
         }
@@ -139,7 +144,7 @@ bool reinsertionNeighborhood(ScheduleData &scheduleData, const std::vector<Order
 // 2-Opt Neighborhood (Reverses two segments of the schedule)
 bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
                         const std::vector<std::vector<int>> &setupTimes,
-                        const std::vector<int> &initialSetupTimes) {
+                        const std::vector<int> &initialSetupTimes, std::unordered_map<std::vector<int>, double, VectorHash> &taboo) {
 
     int n = scheduleData.schedule.size();
     int best_i = -1, best_j = -1;
@@ -150,7 +155,7 @@ bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &or
 
     for (int i = 0; i < n - 1; ++i) {
         // Limit j to ensure the block size does not exceed 10
-        int max_j = std::min(n - 1, i + 9); // i + 9 ensures block size <= 10
+        int max_j = std::min(n - 1, i + 4); // i + 9 ensures block size <= 10
         for (int j = i + 1; j <= max_j; ++j) {
             tempScheduleData = scheduleData;
 
@@ -158,14 +163,20 @@ bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &or
             std::reverse(tempScheduleData.schedule.begin() + i, tempScheduleData.schedule.begin() + j + 1);
 
             // Recalculate total penalty for the temporary schedule
+            if (taboo.find(tempScheduleData.schedule) != taboo.end()) { //checks if it exists in the taboo list
+                continue;
+            }
             calculateTotalPenalty(tempScheduleData, orders, setupTimes, initialSetupTimes);
-            double newPenalty = tempScheduleData.totalPenalty;
-
-            if (newPenalty < bestPenalty) {
+            if (const double newPenalty = tempScheduleData.totalPenalty; newPenalty == bestPenalty) {
+                taboo[tempScheduleData.schedule] = newPenalty;
+            }
+            else if (newPenalty < bestPenalty) {
                 bestPenalty = newPenalty;
                 best_i = i;
                 best_j = j;
                 improvementFound = true;
+                taboo.clear();
+                taboo[tempScheduleData.schedule] = newPenalty;
             }
         }
     }
@@ -177,8 +188,6 @@ bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &or
         // Recalculate total penalty for the actual schedule
         calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
 
-        // Increment the improvement counter
-        two_opt_improvement_count++;
         return true;
     }
 
