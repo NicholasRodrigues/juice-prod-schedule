@@ -55,7 +55,11 @@ struct TaskPriority {
         return priority < other.priority; // Higher priority tasks should come first
     }
 };
-
+struct ComparePriority {
+    bool operator()(const TaskPriority& lhs, const TaskPriority& rhs) const {
+        return lhs.priority < rhs.priority;
+    }
+};
 // Function declarations
 double calculatePriority(const Order &order, int setupTime);
 
