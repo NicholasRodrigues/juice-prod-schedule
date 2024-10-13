@@ -374,7 +374,8 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule,
     // Initialize best and current schedule data
     ScheduleData bestScheduleData;
     bestScheduleData.schedule = initialSchedule;
-    double bestPenalty = currentPenaltyCost;
+    calculateTotalPenalty(bestScheduleData, orders, setupTimes, initialSetupTimes);
+    double bestPenalty = bestScheduleData.totalPenalty;
 
     ScheduleData currentScheduleData = bestScheduleData;
     int noImprovementCounter = 0;
