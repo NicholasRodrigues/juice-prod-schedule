@@ -289,12 +289,21 @@ void adaptiveRVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
         for (const auto& neighborhood : neighborhoods) {
             if (neighborhood(scheduleData, orders, setupTimes, initialSetupTimes)) {
                 improvement = true;
-                break;
+
+                // Check if the new solution is better than the best found so far
+                if (scheduleData.totalPenalty < bestPenalty) {
+                    bestPenalty = scheduleData.totalPenalty;
+                    bestScheduleData = scheduleData;  // Update best solution
+                }
+                break;  // Restart the loop after an improvement
             }
         }
     }
+
+    // After the RVND finishes, update the input schedule data with the best solution found
+    scheduleData = bestScheduleData;
 }
-void perturbSolution(std::vector<int>& schedule, int perturbationStrength, std::mt19937& rng) {
+void perturbSolution(std::vector<int>& schedule, std::mt19937& rng) {
     int n = schedule.size();
     if (n < 8) return;
 
@@ -355,14 +364,12 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule,
             bestScheduleData = currentScheduleData;
             bestPenalty = currentScheduleData.totalPenalty;
             noImprovementCounter = 0;
-            perturbationStrength = 1;
         } else {
             noImprovementCounter++;
-            perturbationStrength = std::min(perturbationStrength + 1, PERTURBATION_STRENGTH_MAX);
         }
 
         // Perturb the current solution using the same RNG
-        perturbSolution(currentScheduleData.schedule, perturbationStrength, rng);
+        perturbSolution(currentScheduleData.schedule, rng);
         calculateTotalPenalty(currentScheduleData, orders, setupTimes, initialSetupTimes);
     }
 
