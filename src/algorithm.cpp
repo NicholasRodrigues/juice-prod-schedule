@@ -198,6 +198,7 @@ double calculateMaxPenalty(const std::vector<int>& schedule, const std::vector<O
 //    return schedule;
 //}
 
+// New greedy algorithm considering both due date, penalty rate, and setup time (dynamic)
 std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
                                  const std::vector<std::vector<int>> &setupTimes,
                                  const std::vector<int> &initialSetupTimes,
@@ -210,43 +211,48 @@ std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
     int currentTask = -1;
     totalPenaltyCost = 0.0;
 
-    // Priority queue to pick the task with the best priority
-    std::priority_queue<TaskPriority, std::vector<TaskPriority>, ComparePriority> taskQueue;
+    for (int count = 0; count < n; ++count)
+    {
+        int bestTask = -1;
+        double bestPriority = -1.0;
 
-    // Initially calculate the priority for all tasks and push them into the priority queue
-    for (int i = 0; i < n; ++i) {
-        int setupTime = initialSetupTimes[i]; // Initial setup times
-        double priority = calculatePriority(orders[i], setupTime);
-        taskQueue.push({i, priority});
-    }
+        for (int i = 0; i < n; ++i)
+        {
+            if (scheduled[i])
+                continue; // Skip jobs that are already scheduled
 
-    while (!taskQueue.empty()) {
-        // Get the task with the highest priority
-        TaskPriority bestTask = taskQueue.top();
-        taskQueue.pop();
+            // Calculate setup time dynamically (from last scheduled task)
+            int setupTime = (currentTask >= 0) ? setupTimes[currentTask][i] : initialSetupTimes[i];
 
-        if (scheduled[bestTask.taskId])
-            continue; // Skip jobs that are already scheduled
+            // Calculate the priority for this job
+            double priority = calculatePriority(orders[i], setupTime);
+
+            if (bestTask == -1 || priority > bestPriority)
+            {
+                bestTask = i;
+                bestPriority = priority;
+            }
+        }
 
         // Schedule the best task found
-        scheduled[bestTask.taskId] = true;
-        schedule.push_back(bestTask.taskId);
+        scheduled[bestTask] = true;
+        schedule.push_back(bestTask);
 
-        // Update current time and penalty
-        int setupTime = (currentTask >= 0) ? setupTimes[currentTask][bestTask.taskId] : initialSetupTimes[bestTask.taskId];
-        currentTime += setupTime + orders[bestTask.taskId].processingTime;
+        int setupTime = (currentTask >= 0) ? setupTimes[currentTask][bestTask] : initialSetupTimes[bestTask];
+        currentTime += setupTime + orders[bestTask].processingTime;
 
-        if (currentTime > orders[bestTask.taskId].dueTime) {
-            double penalty = orders[bestTask.taskId].penaltyRate * (currentTime - orders[bestTask.taskId].dueTime);
+        if (currentTime > orders[bestTask].dueTime)
+        {
+            double penalty = orders[bestTask].penaltyRate * (currentTime - orders[bestTask].dueTime);
             totalPenaltyCost += penalty;
         }
 
-        currentTask = bestTask.taskId;
-
+        currentTask = bestTask;
     }
 
     return schedule;
 }
+
 
 double calculateTotalPenaltyForSchedule(const std::vector<int>& schedule,
                                         const std::vector<Order>& orders,
