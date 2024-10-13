@@ -290,8 +290,6 @@ double calculateTotalPenaltyForSchedule(const std::vector<int>& schedule,
 }
 
 
-
-// algorithm.cpp
 std::vector<int> GRASP(const std::vector<Order>& orders,
                        const std::vector<std::vector<int>>& setupTimes,
                        const std::vector<int>& initialSetupTimes,
@@ -302,71 +300,17 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
     std::vector<int> bestSolution;
     double bestPenaltyCost = std::numeric_limits<double>::infinity();
 
-    int rclSize = orders.size() / 4;
 
     for (int iter = 0; iter < maxIterations; ++iter) {
         std::vector<int> newSchedule;
-        int n = orders.size();
 
-        // Priority queue for greedy task selection, based on dynamic priorities
-        std::priority_queue<TaskPriority> taskQueue;
+        double iterationPenaltyCost = 0.0;
+        newSchedule = greedyAlgorithm(orders, setupTimes, initialSetupTimes, iterationPenaltyCost);
 
-        // Add all tasks to the priority queue based on their initial setup times
-        for (int i = 0; i < n; ++i) {
-            int setupTime = initialSetupTimes[i];
-            double priority = calculatePriority(orders[i], setupTime);
-            taskQueue.push({i, priority});
-        }
-
-        // List to track scheduled tasks
-        std::vector<bool> scheduled(n, false);
-        int currentTask = -1;
-        int currentTime = 0;
-
-        while (!taskQueue.empty()) {
-            // Build Restricted Candidate List (RCL) from top RCL_SIZE tasks in the heap
-            std::vector<TaskPriority> rcl;
-            for (int i = 0; i < rclSize && !taskQueue.empty(); ++i) {
-                rcl.push_back(taskQueue.top());
-                taskQueue.pop();
-            }
-
-            // Randomly select a task from the RCL
-            std::uniform_int_distribution<int> distribution(0, rcl.size() - 1);
-            int rclIndex = distribution(rng);
-            int selectedTaskId = rcl[rclIndex].taskId;
-
-            // Schedule the selected task
-            newSchedule.push_back(selectedTaskId);
-            scheduled[selectedTaskId] = true;
-
-            // Update current time and penalties based on the selected task
-            int setupTime = (currentTask >= 0) ? setupTimes[currentTask][selectedTaskId] : initialSetupTimes[selectedTaskId];
-            currentTime += setupTime + orders[selectedTaskId].processingTime;
-
-            // Recalculate priorities for unscheduled tasks and repopulate the heap
-            std::priority_queue<TaskPriority> newQueue;
-            for (int i = 0; i < n; ++i) {
-                if (!scheduled[i]) {
-                    int newSetupTime = (currentTask >= 0) ? setupTimes[currentTask][i] : initialSetupTimes[i];
-                    double newPriority = calculatePriority(orders[i], newSetupTime);
-                    newQueue.push({i, newPriority});
-                }
-            }
-            taskQueue = std::move(newQueue); // Replace the old heap with the updated one
-
-            currentTask = selectedTaskId;
-        }
-
-        // Compute the penalty cost for the new schedule before ILS
-        ScheduleData scheduleData;
-        scheduleData.schedule = newSchedule;
-        calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
-        double iterationPenaltyCost = scheduleData.totalPenalty;
-
-        // Apply local search with ILS, passing RNG down to ILS
+        // Apply local search with ILS (iterative local search), passing RNG down to ILS
         newSchedule = ILS(newSchedule, orders, setupTimes, initialSetupTimes, iterationPenaltyCost, rng);
 
+        // Check if the current solution is the best found so far
         if (iterationPenaltyCost < bestPenaltyCost) {
             bestSolution = newSchedule;
             bestPenaltyCost = iterationPenaltyCost;
@@ -384,8 +328,9 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
             std::cout << "=============================================" << std::endl;
         }
 
+        // Early exit if an optimal solution is found
         if (bestPenaltyCost == 0) {
-            break;  // Early exit if optimal solution found
+            break;
         }
     }
 
