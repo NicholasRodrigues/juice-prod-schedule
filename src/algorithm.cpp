@@ -445,12 +445,10 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule,
     // Initialize best and current schedule data
     ScheduleData bestScheduleData;
     bestScheduleData.schedule = initialSchedule;
-    calculateTotalPenalty(bestScheduleData, orders, setupTimes, initialSetupTimes);
-    double bestPenalty = bestScheduleData.totalPenalty;
+    double bestPenalty = currentPenaltyCost;
 
     ScheduleData currentScheduleData = bestScheduleData;
     int noImprovementCounter = 0;
-    int perturbationStrength = 1;
 
     int max_no_improvement_iterations = 4 * initialSchedule.size();
 
@@ -464,7 +462,6 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule,
             bestScheduleData = currentScheduleData;
             bestPenalty = currentScheduleData.totalPenalty;
             noImprovementCounter = 0;
-            perturbationStrength = 1;
         }
         else
         {
