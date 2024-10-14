@@ -64,8 +64,6 @@ void calculateTotalPenalty(ScheduleData &scheduleData, const std::vector<Order> 
     int currentTask = -1;
 
     int n = scheduleData.schedule.size();
-    scheduleData.arrivalTimes.resize(n);
-    scheduleData.penalties.resize(n);
 
     for (size_t i = 0; i < n; ++i)
     {
@@ -83,14 +81,11 @@ void calculateTotalPenalty(ScheduleData &scheduleData, const std::vector<Order> 
         }
         currentTime += setupTime + order.processingTime;
 
-        scheduleData.arrivalTimes[i] = currentTime;
-
         double penalty = 0.0;
         if (currentTime > order.dueTime)
         {
             penalty = order.penaltyRate * (currentTime - order.dueTime);
         }
-        scheduleData.penalties[i] = penalty;
         totalPenaltyCost += penalty;
 
         currentTask = taskId;

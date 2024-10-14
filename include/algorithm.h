@@ -5,7 +5,6 @@
 #include <functional>
 #include <random>
 #include "order.h"
-#include "tabu_list.h"
 #include "schedule_data.h"
 
 // Constants

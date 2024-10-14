@@ -6,8 +6,6 @@
 
 struct ScheduleData {
     std::vector<int> schedule;
-    std::vector<int> arrivalTimes;
-    std::vector<double> penalties;
     double totalPenalty;
 };
 
