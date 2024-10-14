@@ -75,12 +75,7 @@ double calculateMaxPenalty(const std::vector<int>& schedule, const std::vector<O
                            const std::vector<std::vector<int>>& setupTimes,
                            const std::vector<int>& initialSetupTimes);
 
-std::vector<int> greedyAlgorithm(const std::vector<Order> &orders,
-                                 const std::vector<std::vector<int>> &setupTimes,
-                                 const std::vector<int> &initialSetupTimes,
-                                 double &totalPenaltyCost);
-
-void adaptiveRVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
+void RVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
                   const std::vector<std::vector<int>>& setupTimes,
                   const std::vector<int>& initialSetupTimes, std::mt19937& rng);
 
@@ -103,7 +98,6 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule,
 std::vector<int> greedyConstruction(const std::vector<Order> &orders,
                                     const std::vector<std::vector<int>> &setupTimes,
                                     const std::vector<int> &initialSetupTimes,
-                                    bool useRCL,
-                                    int rclSize,
+                                    double alpha,
                                     std::mt19937* rng);
 #endif // ALGORITHM_H

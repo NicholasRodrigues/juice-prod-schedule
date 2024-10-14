@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
     auto start_construction = std::chrono::high_resolution_clock::now();
     try
     {
-        std::vector<int> constructionSchedule = greedyConstruction(orders, setupTimes, initialSetupTimes, false, 1, nullptr);
+        std::vector<int> constructionSchedule = greedyConstruction(orders, setupTimes, initialSetupTimes, 0, nullptr);
         auto end_construction = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed_construction = end_construction - start_construction;
         constructionTime = elapsed_construction.count();
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
     auto start_rvnd = std::chrono::high_resolution_clock::now();
     try
     {
-        adaptiveRVND(constructionData, orders, setupTimes, initialSetupTimes, rng);  // Use constructionData here
+        RVND(constructionData, orders, setupTimes, initialSetupTimes, rng);  // Use constructionData here
         auto end_rvnd = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed_rvnd = end_rvnd - start_rvnd;
         rvndTime = elapsed_rvnd.count();

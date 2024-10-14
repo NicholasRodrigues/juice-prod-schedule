@@ -113,8 +113,7 @@ void calculateTotalPenalty(ScheduleData &scheduleData, const std::vector<Order> 
 std::vector<int> greedyConstruction(const std::vector<Order> &orders,
                                     const std::vector<std::vector<int>> &setupTimes,
                                     const std::vector<int> &initialSetupTimes,
-                                    bool useRCL,
-                                    int rclSize,
+                                    double alpha,
                                     std::mt19937* rng)
 {
     const int n = orders.size();
@@ -135,36 +134,26 @@ std::vector<int> greedyConstruction(const std::vector<Order> &orders,
     {
         std::vector<TaskPriority> rcl;
 
-        // Determine the actual RCL size based on remaining tasks
-        const int actualRCLSize = std::min(rclSize, static_cast<int>(unscheduledTasks.size()));
+
 
         // Find the top rclSize tasks
-        std::partial_sort(unscheduledTasks.begin(),
-                          unscheduledTasks.begin() + actualRCLSize,
-                          unscheduledTasks.end(),
+        std::sort(unscheduledTasks.begin(),unscheduledTasks.end(),
                           [](const TaskPriority& a, const TaskPriority& b) {
                               return a.priority > b.priority; // Descending order
                           });
+
+        // Determine the actual RCL size based on remaining tasks
+        const int actualRCLSize = alpha < 0.001 ? 1 : std::ceil(alpha * unscheduledTasks.size());
+
 
         // Build the Restricted Candidate List (RCL)
         for(int i = 0; i < actualRCLSize; ++i)
         {
             rcl.push_back(unscheduledTasks[i]);
         }
+        int chosenTask =  rand() % actualRCLSize;
 
-        // Select a task from RCL
-        int selectedTaskId;
-        if (useRCL && rng != nullptr && !rcl.empty())
-        {
-            std::uniform_int_distribution<int> distribution(0, rcl.size() - 1);
-            const int rclIndex = distribution(*rng);
-            selectedTaskId = rcl[rclIndex].taskId;
-        }
-        else
-        {
-            // Pure greedy selection
-            selectedTaskId = rcl[0].taskId;
-        }
+        int selectedTaskId = rcl[chosenTask].taskId;
 
         // Add the selected task to the schedule
         schedule.push_back(selectedTaskId);
@@ -211,19 +200,17 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
     double bestPenaltyCost = std::numeric_limits<double>::infinity();
 
     // Define RCL size (e.g., top 25% of candidates)
-    const int rclSize = std::max(1, static_cast<int>(orders.size() / 4));
-
+    const double alpha = 0.6;
     for (int iter = 0; iter < maxIterations; ++iter)
     {
         // Construct schedule using RCL-based selection
-        std::vector<int> newSchedule = greedyConstruction(orders, setupTimes, initialSetupTimes, true, rclSize, &rng);
+        std::vector<int> newSchedule = greedyConstruction(orders, setupTimes, initialSetupTimes, alpha, &rng);
 
         // Compute the penalty cost for the new schedule
         ScheduleData scheduleData;
         scheduleData.schedule = newSchedule;
         calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
         double iterationPenaltyCost = scheduleData.totalPenalty;
-
         // Apply local search with ILS
         newSchedule = ILS(newSchedule, orders, setupTimes, initialSetupTimes, iterationPenaltyCost, rng);
 
@@ -274,19 +261,17 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
  * @param initialSetupTimes  Vector of initial setup times.
  * @param rng                Random number generator.
  */
-void adaptiveRVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
+void RVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
                   const std::vector<std::vector<int>>& setupTimes,
                   const std::vector<int>& initialSetupTimes, std::mt19937& rng)
 {
-    std::unordered_map<std::vector<int>, double, VectorHash> taboo;
     std::vector<std::function<bool(ScheduleData&, const std::vector<Order>&,
-    const std::vector<std::vector<int>> &,
-    const std::vector<int>&, std::unordered_map<std::vector<int>, double, VectorHash>&)>> neighborhoods = {
+       const std::vector<std::vector<int>> &,
+       const std::vector<int>&)>> neighborhoods = {
         reinsertionNeighborhood,
         swapNeighborhood,
         twoOptNeighborhood
 };
-
     bool improvement = true;
 
     while (improvement)
@@ -299,7 +284,7 @@ void adaptiveRVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
             // Generate a neighbor using the current neighborhood
             ScheduleData neighborScheduleData = scheduleData; // Create a copy to test the move
 
-            if (bool moved = neighborhood(neighborScheduleData, orders, setupTimes, initialSetupTimes, taboo))
+            if (bool moved = neighborhood(neighborScheduleData, orders, setupTimes, initialSetupTimes))
             {
                 // Accept the move
                 scheduleData = std::move(neighborScheduleData);
@@ -385,7 +370,7 @@ std::vector<int> ILS(const std::vector<int>& initialSchedule,
     while (noImprovementCounter < max_no_improvement_iterations)
     {
         // Perform RVND local search
-        adaptiveRVND(currentScheduleData, orders, setupTimes, initialSetupTimes, rng);
+        RVND(currentScheduleData, orders, setupTimes, initialSetupTimes, rng);
 
         if (currentScheduleData.totalPenalty < bestPenalty)
         {
