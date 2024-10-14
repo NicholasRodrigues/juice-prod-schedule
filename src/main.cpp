@@ -33,7 +33,8 @@ std::unordered_map<std::string, double> optimalPenalties = {
 
 int main(int argc, char *argv[])
 {
-    // Check if a file was passed as an argument
+    srand(time(NULL));
+
     if (argc < 2 || argc > 3)
     {
         std::cerr << "Usage: " << argv[0] << " <instance_file_path> [seed]" << std::endl;

@@ -63,28 +63,14 @@ struct ComparePriority {
 // Function declarations
 double calculatePriority(const Order &order, int setupTime);
 
-int getSetupTime(int currentTask, int nextTask, const std::vector<std::vector<int>> &setupTimes,
-                 const std::vector<int> &initialSetupTimes);
-bool acceptSolution(double currentPenalty, double newPenalty, double threshold);
 
 void calculateTotalPenalty(ScheduleData &scheduleData, const std::vector<Order> &orders,
                            const std::vector<std::vector<int>> &setupTimes,
                            const std::vector<int> &initialSetupTimes);
 
-double calculateMaxPenalty(const std::vector<int>& schedule, const std::vector<Order>& orders,
-                           const std::vector<std::vector<int>>& setupTimes,
-                           const std::vector<int>& initialSetupTimes);
-
 void RVND(ScheduleData& scheduleData, const std::vector<Order>& orders,
                   const std::vector<std::vector<int>>& setupTimes,
                   const std::vector<int>& initialSetupTimes, std::mt19937& rng);
-
-void adaptiveShuffle(
-    std::vector<std::function<bool(std::vector<int> &, const std::vector<Order> &,
-                                   const std::vector<std::vector<int>> &,
-                                   const std::vector<int> &)>> &neighborhoods,
-    std::vector<double> &neighborhoodWeights,
-    std::mt19937 &g);
 
 void perturbSolution(std::vector<int>& schedule, std::mt19937& rng);
 

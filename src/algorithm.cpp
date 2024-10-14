@@ -198,9 +198,9 @@ std::vector<int> GRASP(const std::vector<Order>& orders,
     constexpr int maxIterations = GRASP_ITERATIONS;
     std::vector<int> bestSolution;
     double bestPenaltyCost = std::numeric_limits<double>::infinity();
+    const double alpha = 0.25;
 
     // Define RCL size (e.g., top 25% of candidates)
-    const double alpha = 0.6;
     for (int iter = 0; iter < maxIterations; ++iter)
     {
         // Construct schedule using RCL-based selection
