@@ -3,31 +3,20 @@
 
 #include <vector>
 #include "order.h"
+#include "schedule_data.h"
 
-// Function declarations
-bool swapNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                      const std::vector<std::vector<int>>& setupTimes,
-                      const std::vector<int>& initialSetupTimes, double& currentPenalty);
+// Swap Neighborhood Function
+bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
+                      const std::vector<std::vector<int>> &setupTimes,
+                      const std::vector<int> &initialSetupTimes);
+// (Reinsertion) Neighborhood Function
+bool reinsertionNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
+                            const std::vector<std::vector<int>> &setupTimes,
+                            const std::vector<int> &initialSetupTimes);
 
-bool reinsertionNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                             const std::vector<std::vector<int>>& setupTimes,
-                             const std::vector<int>& initialSetupTimes, double& currentPenalty);
-
-bool twoOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                        const std::vector<std::vector<int>>& setupTimes,
-                        const std::vector<int>& initialSetupTimes, double& currentPenalty);
-
-bool blockExchangeNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                               const std::vector<std::vector<int>>& setupTimes,
-                               const std::vector<int>& initialSetupTimes, double& currentPenalty);
-
-bool blockShiftNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                            const std::vector<std::vector<int>>& setupTimes,
-                            const std::vector<int>& initialSetupTimes, double& currentPenalty);
-
-bool threeOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                          const std::vector<std::vector<int>>& setupTimes,
-                          const std::vector<int>& initialSetupTimes, double& currentPenalty);
-
+// 2-Opt Neighborhood Function
+bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
+                        const std::vector<std::vector<int>> &setupTimes,
+                        const std::vector<int> &initialSetupTimes);
 
 #endif // NEIGHBORHOODS_H

@@ -3,218 +3,125 @@
 #include <algorithm>
 #include <set>
 #include <iostream>
+#include "schedule_data.h"
 
-// Define improvement threshold
-#ifndef IMPROVEMENT_THRESHOLD
-#define IMPROVEMENT_THRESHOLD 1e-6
-#endif
 
-// Swap Neighborhood Function
-bool swapNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                      const std::vector<std::vector<int>>& setupTimes,
-                      const std::vector<int>& initialSetupTimes, double& currentPenalty) {
-    int n = schedule.size();
-    double bestPenalty = currentPenalty;
-    int best_i = -1, best_j = -1;
-    bool improvementFound = false;
+// swap Neighborhood (Exchanges two blocks or single jobs in the schedule)
+bool swapNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
+                               const std::vector<std::vector<int>> &setupTimes,
+                               const std::vector<int> &initialSetupTimes) {
 
-    for (int i = 0; i < n - 1; ++i) {
-        for (int j = i + 1; j < n; ++j) {
-            std::swap(schedule[i], schedule[j]);
-            double newPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
-
-            if (newPenalty < bestPenalty) {
-                bestPenalty = newPenalty;
-                best_i = i;
-                best_j = j;
-                improvementFound = true;
-            }
-
-            std::swap(schedule[i], schedule[j]);  // Restore original
-        }
-    }
-
-    if (improvementFound) {
-        std::swap(schedule[best_i], schedule[best_j]);
-        currentPenalty = bestPenalty;
-        return true;
-    }
-
-    return false;
-}
-
-// Block Exchange Neighborhood (Exchanges two blocks)
-bool blockExchangeNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                               const std::vector<std::vector<int>>& setupTimes,
-                               const std::vector<int>& initialSetupTimes, double& currentPenalty) {
-    int n = schedule.size();
-    double bestPenalty = currentPenalty;
+    int n = scheduleData.schedule.size();
     int best_i = -1, best_j = -1, best_l = -1;
     bool improvementFound = false;
+    double bestPenalty = scheduleData.totalPenalty;
 
     // Consider block sizes between 2 and 4
-    for (int l = 2; l <= std::min(4, n / 2); ++l) {
+    for (int l = 1; l <= 10; ++l) {
         for (int i = 0; i <= n - 2 * l; ++i) {
             for (int j = i + l; j <= n - l; ++j) {
-                if (i + l <= n && j + l <= n) {  // Boundary check
-                    std::vector<int> newSchedule = schedule;
-                    // Swap two blocks of length l
-                    std::swap_ranges(newSchedule.begin() + i, newSchedule.begin() + i + l,
-                                     newSchedule.begin() + j);
+                ScheduleData tempScheduleData = scheduleData;
 
-                    double newPenalty = calculateTotalPenalty(newSchedule, orders, setupTimes, initialSetupTimes);
+                // Perform block exchange in the temporary schedule
+                std::swap_ranges(tempScheduleData.schedule.begin() + i, tempScheduleData.schedule.begin() + i + l,
+                                 tempScheduleData.schedule.begin() + j);
 
-                    if (newPenalty < bestPenalty) {
-                        bestPenalty = newPenalty;
-                        best_i = i;
-                        best_j = j;
-                        best_l = l;
-                        improvementFound = true;
-                    }
+                // Recalculate total penalty for the temporary schedule
+                calculateTotalPenalty(tempScheduleData, orders, setupTimes, initialSetupTimes);
+
+                if (const double newPenalty = tempScheduleData.totalPenalty; newPenalty < bestPenalty) {
+                    bestPenalty = newPenalty;
+                    best_i = i;
+                    best_j = j;
+                    best_l = l;
+                    improvementFound = true;
                 }
             }
         }
     }
 
     if (improvementFound) {
-        std::swap_ranges(schedule.begin() + best_i, schedule.begin() + best_i + best_l,
-                         schedule.begin() + best_j);
-        currentPenalty = bestPenalty;
+        // Apply the best block exchange to the actual schedule
+        std::swap_ranges(scheduleData.schedule.begin() + best_i, scheduleData.schedule.begin() + best_i + best_l,
+                         scheduleData.schedule.begin() + best_j);
+
+        // Recalculate total penalty for the actual schedule
+        calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
+
+        // Increment the improvement counter
         return true;
     }
 
     return false;
 }
 
-// Block Shift Neighborhood (Shifts a block to another position)
-bool blockShiftNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                            const std::vector<std::vector<int>>& setupTimes,
-                            const std::vector<int>& initialSetupTimes, double& currentPenalty) {
-    int n = schedule.size();
-    double bestPenalty = currentPenalty;
+// Reinsertion Neighborhood (Shifts a block of jobs, or a single one to another position)
+bool reinsertionNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
+                            const std::vector<std::vector<int>> &setupTimes,
+                            const std::vector<int> &initialSetupTimes)
+{
+    int n = scheduleData.schedule.size();
     int best_i = -1, best_j = -1, best_l = -1;
     bool improvementFound = false;
+    double bestPenalty = scheduleData.totalPenalty;
 
-    for (int l = 2; l <= std::min(5, n); ++l) {  // Consider block lengths
-        for (int i = 0; i <= n - l; ++i) {
-            for (int j = 0; j < n; ++j) {
-                if (j >= i && j <= i + l - 1) continue;  // Skip invalid moves
+    // Consider block sizes from 1 to 5
+    for (int l = 1; l <= 10; ++l)
+    {
+        for (int i = 0; i <= n - l; ++i)
+        {
+            for (int j = 0; j <= n - l; ++j)
+            {
+                if (j >= i && j <= i + l - 1) continue;  // Skip overlapping positions
 
-                if (i + l <= n && j + l <= n) {  // Boundary check
-                    std::vector<int> newSchedule = schedule;
-                    std::vector<int> block(newSchedule.begin() + i, newSchedule.begin() + i + l);
-                    newSchedule.erase(newSchedule.begin() + i, newSchedule.begin() + i + l);
-                    newSchedule.insert(newSchedule.begin() + j, block.begin(), block.end());
+                ScheduleData tempScheduleData = scheduleData;
 
-                    double newPenalty = calculateTotalPenalty(newSchedule, orders, setupTimes, initialSetupTimes);
+                // Perform block shift in the temporary schedule
+                std::vector<int> block(tempScheduleData.schedule.begin() + i, tempScheduleData.schedule.begin() + i + l);
+                tempScheduleData.schedule.erase(tempScheduleData.schedule.begin() + i, tempScheduleData.schedule.begin() + i + l);
 
-                    if (newPenalty < bestPenalty) {
-                        bestPenalty = newPenalty;
-                        best_i = i;
-                        best_j = j;
-                        best_l = l;
-                        improvementFound = true;
-                    }
+                // Adjust the insertion position if necessary
+                int adjusted_j = j;
+                if (j > i)
+                {
+                    adjusted_j -= l;
+                }
+
+                tempScheduleData.schedule.insert(tempScheduleData.schedule.begin() + adjusted_j, block.begin(), block.end());
+
+                // Recalculate total penalty for the temporary schedule
+                calculateTotalPenalty(tempScheduleData, orders, setupTimes, initialSetupTimes);
+
+                if (const double newPenalty = tempScheduleData.totalPenalty; newPenalty < bestPenalty)
+                {
+                    bestPenalty = newPenalty;
+                    best_i = i;
+                    best_j = j;
+                    best_l = l;
+                    improvementFound = true;
                 }
             }
         }
     }
 
-    if (improvementFound) {
-        std::vector<int> block(schedule.begin() + best_i, schedule.begin() + best_i + best_l);
-        schedule.erase(schedule.begin() + best_i, schedule.begin() + best_i + best_l);
-        schedule.insert(schedule.begin() + best_j, block.begin(), block.end());
-        currentPenalty = bestPenalty;
-        return true;
-    }
+    if (improvementFound)
+    {
+        // Apply the best block shift to the actual schedule
+        std::vector<int> block(scheduleData.schedule.begin() + best_i, scheduleData.schedule.begin() + best_i + best_l);
+        scheduleData.schedule.erase(scheduleData.schedule.begin() + best_i, scheduleData.schedule.begin() + best_i + best_l);
 
-    return false;
-}
-
-// Reinsertion Neighborhood (subsequence insertion)
-bool reinsertionNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                             const std::vector<std::vector<int>>& setupTimes,
-                             const std::vector<int>& initialSetupTimes, double& currentPenalty) {
-    int n = schedule.size();
-    double bestPenalty = currentPenalty;
-    int best_i = -1, best_j = -1, best_l = -1;
-    bool improvementFound = false;
-
-    for (int l = 1; l <= std::min(5, n); ++l) {  // Consider subsequences of varying lengths
-        for (int i = 0; i <= n - l; ++i) {
-            for (int j = 0; j <= n - l; ++j) {
-                if (j >= i && j <= i + l - 1) continue;  // Skip invalid moves
-
-                if (i + l <= n && j + l <= n) {  // Boundary check
-                    std::vector<int> newSchedule = schedule;
-                    std::vector<int> subsequence(newSchedule.begin() + i, newSchedule.begin() + i + l);
-                    newSchedule.erase(newSchedule.begin() + i, newSchedule.begin() + i + l);
-                    newSchedule.insert(newSchedule.begin() + j, subsequence.begin(), subsequence.end());
-
-                    double newPenalty = calculateTotalPenalty(newSchedule, orders, setupTimes, initialSetupTimes);
-
-                    if (newPenalty < bestPenalty) {
-                        bestPenalty = newPenalty;
-                        best_i = i;
-                        best_j = j;
-                        best_l = l;
-                        improvementFound = true;
-                    }
-                }
-            }
+        // Adjust the insertion position if necessary
+        int adjusted_j = best_j;
+        if (best_j > best_i)
+        {
+            adjusted_j -= best_l;
         }
-    }
 
-    if (improvementFound) {
-        std::vector<int> subsequence(schedule.begin() + best_i, schedule.begin() + best_i + best_l);
-        schedule.erase(schedule.begin() + best_i, schedule.begin() + best_i + best_l);
-        schedule.insert(schedule.begin() + best_j, subsequence.begin(), subsequence.end());
-        currentPenalty = bestPenalty;
-        return true;
-    }
+        scheduleData.schedule.insert(scheduleData.schedule.begin() + adjusted_j, block.begin(), block.end());
 
-    return false;
-}
+        // Recalculate total penalty for the actual schedule
+        calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
 
-// 3-Opt Neighborhood (Reverses three segments of the schedule)
-bool threeOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                          const std::vector<std::vector<int>>& setupTimes,
-                          const std::vector<int>& initialSetupTimes, double& currentPenalty) {
-    int n = schedule.size();
-    double bestPenalty = currentPenalty;
-    int best_i = -1, best_j = -1, best_k = -1;
-    bool improvementFound = false;
-
-    // Evaluate all possible 3-opt moves
-    for (int i = 0; i < n - 2; ++i) {
-        for (int j = i + 1; j < n - 1; ++j) {
-            for (int k = j + 1; k < n; ++k) {
-                if (i < n && j + 1 < n && k + 1 < n) {  // Boundary check
-                    std::reverse(schedule.begin() + i, schedule.begin() + j + 1);
-                    std::reverse(schedule.begin() + j + 1, schedule.begin() + k + 1);
-
-                    double newPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
-
-                    if (newPenalty < bestPenalty) {
-                        bestPenalty = newPenalty;
-                        best_i = i;
-                        best_j = j;
-                        best_k = k;
-                        improvementFound = true;
-                    }
-
-                    // Reverse back to restore original schedule
-                    std::reverse(schedule.begin() + j + 1, schedule.begin() + k + 1);
-                    std::reverse(schedule.begin() + i, schedule.begin() + j + 1);
-                }
-            }
-        }
-    }
-
-    if (improvementFound) {
-        std::reverse(schedule.begin() + best_i, schedule.begin() + best_j + 1);
-        std::reverse(schedule.begin() + best_j + 1, schedule.begin() + best_k + 1);
-        currentPenalty = bestPenalty;
         return true;
     }
 
@@ -222,37 +129,43 @@ bool threeOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& 
 }
 
 // 2-Opt Neighborhood (Reverses two segments of the schedule)
-bool twoOptNeighborhood(std::vector<int>& schedule, const std::vector<Order>& orders,
-                        const std::vector<std::vector<int>>& setupTimes,
-                        const std::vector<int>& initialSetupTimes, double& currentPenalty) {
-    int n = schedule.size();
-    double bestPenalty = currentPenalty;
+bool twoOptNeighborhood(ScheduleData &scheduleData, const std::vector<Order> &orders,
+                        const std::vector<std::vector<int>> &setupTimes,
+                        const std::vector<int> &initialSetupTimes) {
+
+    int n = scheduleData.schedule.size();
     int best_i = -1, best_j = -1;
     bool improvementFound = false;
+    double bestPenalty = scheduleData.totalPenalty;
 
     for (int i = 0; i < n - 1; ++i) {
-        for (int j = i + 1; j < n; ++j) {
-            if (i < n && j + 1 < n) {  // Boundary check
-                std::reverse(schedule.begin() + i, schedule.begin() + j + 1);
+        // Limit j to ensure the block size does not exceed 10
+        const int max_j = std::min(n - 1, i + 9); // i + 9 ensures block size <= 10
+        for (int j = i + 1; j <= max_j; ++j) {
+            ScheduleData tempScheduleData = scheduleData;
 
-                double newPenalty = calculateTotalPenalty(schedule, orders, setupTimes, initialSetupTimes);
+            // Apply the 2-opt move in the temporary schedule
+            std::reverse(tempScheduleData.schedule.begin() + i, tempScheduleData.schedule.begin() + j + 1);
 
-                if (newPenalty < bestPenalty) {
-                    bestPenalty = newPenalty;
-                    best_i = i;
-                    best_j = j;
-                    improvementFound = true;
-                }
+            // Recalculate total penalty for the temporary schedule
+            calculateTotalPenalty(tempScheduleData, orders, setupTimes, initialSetupTimes);
 
-                // Reverse back to restore the original schedule
-                std::reverse(schedule.begin() + i, schedule.begin() + j + 1);
+            if (const double newPenalty = tempScheduleData.totalPenalty; newPenalty < bestPenalty) {
+                bestPenalty = newPenalty;
+                best_i = i;
+                best_j = j;
+                improvementFound = true;
             }
         }
     }
 
     if (improvementFound) {
-        std::reverse(schedule.begin() + best_i, schedule.begin() + best_j + 1);
-        currentPenalty = bestPenalty;
+        // Apply the best 2-opt move to the actual schedule
+        std::reverse(scheduleData.schedule.begin() + best_i, scheduleData.schedule.begin() + best_j + 1);
+
+        // Recalculate total penalty for the actual schedule
+        calculateTotalPenalty(scheduleData, orders, setupTimes, initialSetupTimes);
+
         return true;
     }
 
